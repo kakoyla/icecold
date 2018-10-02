@@ -1,6 +1,6 @@
 # icecold
 
-> cold wallet interface
+> cold wallet interface, intended to be run only on a pc with no internet connection
 
 demo: https://kakoyla.github.io/
 
