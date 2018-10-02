@@ -13,8 +13,10 @@ npm install
 # build for production with minification
 npm run build
 
-# after built
-1. OPEN the index.html in a text editor
+# Built files will be found in the dist folder
+To run without a server:
+
+1. OPEN the dist/index.html in a text editor
 2. FIND ALL "href=/" REPLACE WITH "href="
 3. FIND ALL "src=/" REPLACE WITH "src="
 4. SAVE 
