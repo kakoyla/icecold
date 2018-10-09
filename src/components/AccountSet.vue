@@ -2,11 +2,133 @@
   <div class="container">
     
     <div v-if="!acctSetTag">
-    <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+    <div style="text-align:left; margin-bottom:20px"> <!--back button -->
             <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="$parent.txType=null" >Back</button> 
         </div>
-    <h4>Set Account Options </h4>
-        <h5>  </h5>
+    <div v-if="!qrModeEmail && !qrModeMessageKey">
+    <h5 class="lightskyblue" style="margin:20px">
+      To set or update a previously submitted value, click "SET". 
+      To clear a previously submitted value click the "CLEAR" button. 
+      To make no updates leave as "N/A". 
+    </h5>
+    
+      <!--Domain-->
+      <div style="margin-bottom:20px">
+      <div class="input-group">
+        
+        <div class="input-group-prepend">
+          <button class="btn btn-outline-dark" :class= "{'active' : !domain.set & !domain.clear}" type="button" @click="domain.set=false, domain.clear=false">N/A</button>
+          <button class="btn btn-outline-success" :class= "{'active' : (domain.set)}" type="button" @click="domain.set=true, domain.clear=false">SET</button>
+          <button class="btn btn-outline-danger" :class= "{'active' : (domain.clear)} " type="button" @click="domain.set=false, domain.clear=true, domain.value =null">CLEAR</button>
+        </div>
+        <h5 style="margin:10px">Domain: </h5>
+         
+        <input type="text" class="form-control" v-model="domain.value" placeholder="example.com" @blur="checkDomain()" :disabled="!domain.set">
+      </div>
+      </div>
+      <hr class="black" style="width:100%; height:3px;  border:none;" />
+      <!--Gravatar/Email Hash-->
+      <div style="margin-bottom:20px">
+      <div class="input-group">
+        
+        <div class="input-group-prepend">
+          <button class="btn btn-outline-dark" :class= "{'active' : !email.set & !email.clear}" type="button" @click="email.set=false, email.clear=false">N/A</button>
+          <button class="btn btn-outline-success" :class= "{'active' : (email.set)}" type="button" @click="email.set=true, email.clear=false">SET</button>
+          <button class="btn btn-outline-danger" :class= "{'active' : (email.clear)} " type="button" @click="email.set=false, email.clear=true, email.hash=null">CLEAR</button>
+        </div>
+        <h5 style="margin:10px">Gravatar/Email Hash: </h5>
+        <input type="text" class="form-control" :class= "{'text-danger' : (!email.valid)}" v-model="email.hash" placeholder="ex: 5b33b93c7ffe384d53450fc666bb11fb" @keyup="checkEmailHash()" :disabled="!email.set">
+        <div class="input-group-append">
+          <button class="btn btn-outline-light" type="button" @click="qrModeEmail = true" :disabled="!email.set"><i class="fa fa-qrcode"></i></button>
+        </div>
+      </div>
+      </div>
+      <hr class="black" style="width:100%; height:3px;  border:none;" />
+      <!--MessageKey-->
+      <div style="margin-bottom:20px">
+      <div class="input-group">
+        
+        <div class="input-group-prepend">
+          <button class="btn btn-outline-dark" :class= "{'active' : !messageKey.set & !messageKey.clear}" type="button" @click="messageKey.set=false, messageKey.clear=false">N/A</button>
+          <button class="btn btn-outline-success" :class= "{'active' : (messageKey.set)}" type="button" @click="messageKey.set=true, messageKey.clear=false">SET</button>
+          <button class="btn btn-outline-danger" :class= "{'active' : (messageKey.clear)} " type="button" @click="messageKey.set=false, messageKey.clear=true, messageKey.value=null">CLEAR</button>
+        </div>
+        <h5 style="margin:10px">Message Key: </h5>
+        <input type="text" style="font-size:16px" class="form-control" :class= "{'text-danger' : (!messageKey.valid)}" v-model="messageKey.value" placeholder="Public key for sending encrypted messages to this account (33-byte Hex)" @keyup="checkMessageKey()" :disabled="!messageKey.set" >
+        <div class="input-group-append">
+          <button class="btn btn-outline-light" type="button" @click="qrModeMessageKey = true" :disabled="!messageKey.set"><i class="fa fa-qrcode"></i></button>
+        </div>
+      </div>
+      </div>
+      <hr class="black" style="width:100%; height:3px;  border:none;" />
+      <!--TransferRate-->
+      <div style="margin-bottom:20px">
+      <div class="input-group">
+        
+        <div class="input-group-prepend">
+          <button class="btn btn-outline-dark" :class= "{'active' : !transferRate.set & !transferRate.clear}" type="button" @click="transferRate.set=false, transferRate.clear=false">N/A</button>
+          <button class="btn btn-outline-success" :class= "{'active' : (transferRate.set)}" type="button" @click="transferRate.set=true, transferRate.clear=false">SET</button>
+          <button class="btn btn-outline-danger" :class= "{'active' : (transferRate.clear)} " type="button" @click="transferRate.set=false, transferRate.clear=true, transferRate.bps = null">CLEAR</button>
+        </div>
+        <h5 style="margin:10px">Transfer Rate (basis points): </h5>
+        <input type="number" v-model="transferRate.bps" placeholder="0 bps" max=10000 min=0 step="0.01" @keyup="transferRateConvert()" @click="transferRateConvert()" @wheel="transferRateConvert()" :disabled="!transferRate.set">
+        <div v-if="transferRate.bps" class="inline lightskyblue" style="margin-left: 20px; font-size:20px">( {{transferRate.percentage}} % ) </div>
+      </div>
+      </div>
+      <hr class="black" style="width:100%; height:3px;  border:none;" />
+      <!--TickSize-->
+      <div style="margin-bottom:20px">
+      <div class="input-group">
+        
+        <div class="input-group-prepend">
+          <button class="btn btn-outline-dark" :class= "{'active' : !tickSize.set & !tickSize.clear}" type="button" @click="tickSize.set=false, tickSize.clear=false">N/A</button>
+          <button class="btn btn-outline-success" :class= "{'active' : (tickSize.set)}" type="button" @click="tickSize.set=true, tickSize.clear=false">SET</button>
+          <button class="btn btn-outline-danger" :class= "{'active' : (tickSize.clear)} " type="button" @click="tickSize.set=false, tickSize.clear=true, tickSize.value = null">CLEAR</button>
+        </div>
+        <h5 style="margin:10px">Tick Size (significant digits, 3-15): </h5>
+        <input type="number" v-model="tickSize.value" placeholder="0" max=15 min=3 step="1" @keyup="tickSizeCheck()" @click="tickSizeCheck()" @wheel="tickSizeCheck()" :disabled="!tickSize.set">
+      </div>
+      </div>
+      <hr class="black" style="width:100%; height:3px;  border:none;" />
+
+    
+    <h5 class="lightskyblue" style="margin:10px">
+      Select a setting flag to enable or disable. Leave blank for no changes.
+    </h5>
+
+
+    <select class="form-control"  v-model="selected" @click="FlagOnOff(null)">
+    <option  v-for="option in options" v-bind:value="option">
+      {{ option.text }}
+    </option>
+    </select>
+    <div v-if="selected.value">
+    <button type="button" class="btn btn-lg btn-outline-success btn-inline-block " :class= "{'active' : (flagOnOff =='enable' & selected.abrev !=null)}" style="font-size:26px;margin-top:10px" v-on:click="FlagOnOff('enable')">
+       Enable {{selected.abrev}} 
+    </button>
+    <button type="button" class="btn btn-lg btn-outline-danger btn-inline-block " :disabled="selected.value ==6" :class= "{'active' : (flagOnOff =='disable' & selected.abrev !=null)}" style="font-size:26px;margin-top:10px" v-on:click="FlagOnOff('disable')">
+       Disable {{selected.abrev}}
+    </button>
+    </div>
+    <div v-if="(selected.value ==null && flagOnOff ==null) || (selected.value !=null && flagOnOff !=null)" style="margin:20px">
+         <button type="button" @click="AcctSetTag('enterSequence')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
+        </div>
+    </div>
+    <div v-if= "qrModeEmail">
+            <qrcodeReader @decode="onQrDecodeEmail"> </qrcodeReader>
+            <button type="button" class="btn btn-outline-primary" style="color:white; margin-top:10px" v-on:click ="cancelEmailQr()">
+            Cancel
+            </button>
+        </div>
+
+    <div v-if= "qrModeMessageKey">
+            <qrcodeReader @decode="onQrDecodeMessageKey"> </qrcodeReader>
+            <button type="button" class="btn btn-outline-primary" style="color:white; margin-top:10px" v-on:click ="cancelMessageKeyQr()">
+            Cancel
+            </button>
+        </div>
+    </div>
+        
     
 
 
@@ -76,6 +198,63 @@
             </div>
         </div>
         
+        <div style="text-align:left">
+        <hr class="bglightskyblue" style="width:100%; height:1px;  border:none;" />  
+        <h5 v-if="Transaction.Domain !=null">Domain 
+            <span v-if="domain.set">
+             set to: 
+              <span class="buttercup">
+                {{ domain.value }} 
+              </span>
+            </span>
+            <span v-if="domain.clear"><span class="badge badge-danger"> cleared </span></span>
+        </h5>
+        <h5 v-if="Transaction.EmailHash !=null">Email Hash / Gravatar 
+            <span v-if="email.set">
+             set to: 
+              <span class="buttercup">
+                {{ email.hash }} 
+              </span>
+            </span>
+            <span v-if="email.clear"><span class="badge badge-danger"> cleared </span></span>
+        </h5>
+        <h5 v-if="Transaction.MessageKey !=null">Message Key
+            <span v-if="messageKey.set">
+             set to: 
+              <span class="buttercup">
+                {{ messageKey.value }} 
+              </span>
+            </span>
+            <span v-if="messageKey.clear"><span class="badge badge-danger"> cleared </span></span>
+        </h5>
+        <h5 v-if="Transaction.TransferRate !=null">Transfer Rate
+            <span v-if="transferRate.set">
+             set to: 
+              <span class="buttercup">
+                {{ transferRate.bps }} basis points ( {{ transferRate.percentage }} % )
+              </span>
+            </span>
+            <span v-if="transferRate.clear"><span class="badge badge-danger"> cleared </span></span>
+        </h5>
+        <h5 v-if="Transaction.TickSize !=null">Tick Size
+            <span v-if="tickSize.set">
+             set to: 
+              <span class="buttercup">
+                {{ tickSize.value }} significant digits
+              </span>
+            </span>
+            <span v-if="tickSize.clear"><span class="badge badge-danger"> cleared </span></span>
+        </h5>
+        <h5 v-if="Transaction.SetFlag">
+            <span class="badge badge-success">Enable Flag: </span> <span class="buttercup"> {{selected.text}} </span>
+        </h5>
+        <h5 v-if="Transaction.ClearFlag">
+            <span class="badge badge-danger">Disable Flag: </span> <span class="buttercup"> {{selected.text}} </span>
+        </h5>
+        <hr class="bglightskyblue" style="width:100%; height:1px;  border:none;" />
+        </div>
+        
+        
         <h5 style="margin:20px;color:lightskyblue">
             After verifying the information above is correct, you can sign the transaction. 
             The next screen will provide you with the transaction blob, which you can submit on an online computer.
@@ -144,13 +323,53 @@ export default {
       signedTx:null,
       Transaction:{},
       txblob:false,
-      LimitAmount: {
-        currency: null,
-        issuer: null,
+      domain:{
+        value:null,
+        set:false,
+        clear:false,
+      },
+      email:{
+        hash:null,
+        set:false,
+        clear:false,
+        valid:false,
+      },
+      messageKey:{
+        value:null,
+        set:false,
+        clear:false,
+        valid:false,
+      },
+      transferRate:{
+        value:null,
+        set:false,
+        clear:false,
+        bps:null,
+        percentage:null,
+      },
+      tickSize:{
+        value:null,
+        set:false,
+        clear:false,
+      },
+      selected:{
         value: null,
-        },
-      LimitIssuerValid:false,
-      qrModeIssuer: false,
+        text: null,
+      },
+      options: [
+      { text: '', value:null, abrev:null   }, 
+      { text: 'Require a Destination Tag to send transactions to this account', value:1, abrev:'RequireDest'   },
+      { text: "Require Approval to hold this account's IOUs", value:2, abrev:'RequireAuth'   },
+      { text: 'Do Not send XRP to this account', value:3, abrev:'DisallowXRP'   },
+      { text: "Track the ID of this account's most recent transaction", value:5, abrev:'AccountTxnID'   },
+      { text: 'Permanently give up the ability to freeze individual trust lines or disable Global Freeze', value:6, abrev:'NoFreeze'   },
+      { text: 'Freeze all assets issued by this account', value:7, abrev:'GlobalFreeze'   },
+      { text: "Rippling", value:8, abrev:'DefaultRipple'   },
+      { text: 'Reject Unauthorized Deposits', value:9, abrev:'DepositAuth'  },
+    ],
+      qrModeEmail: false,
+      qrModeMessageKey: false,
+      flagOnOff:null,
       
       acctSetTag:null,
       feeXRP:null,
@@ -161,7 +380,9 @@ export default {
 
   methods: {
 
-
+    FlagOnOff: function(onOff) {
+      this.flagOnOff = onOff;
+    },
 
     AcctSetTag: function(acctSetTag){
         this.acctSetTag = acctSetTag;
@@ -178,11 +399,79 @@ export default {
               Account: this.walletAddress,
               Fee: this.fee,
               Sequence: this.Sequence *1,
-              LimitAmount: this.LimitAmount,
             };
-    
-    
-    },
+    //check for Domain
+    if(this.domain.set){
+        this.Transaction.Domain = Buffer.from(this.domain.value, 'utf8').toString('hex').toUpperCase()
+      }
+    else if(this.domain.clear){
+        this.Transaction.Domain = ''
+      }
+    else if(this.Transaction.Domain){
+      delete Transaction.Domain
+      };
+    //check for email
+    if(this.email.set){
+        this.Transaction.EmailHash = this.email.hash
+      }
+    else if(this.email.clear){
+        this.Transaction.EmailHash = 'D41D8CD98F00B204E9800998ECF8427E'
+      }
+    else if(this.Transaction.EmailHash){
+      delete Transaction.EmailHash
+      };
+    //check for message key
+    if(this.messageKey.set){
+        this.Transaction.MessageKey = this.messageKey.value
+      }
+    else if(this.messageKey.clear){
+        this.Transaction.MessageKey = ""
+      }
+    else if(this.Transaction.MessageKey){
+      delete Transaction.MessageKey
+      };
+    //check for transfer rate
+    if(this.transferRate.set){
+        this.Transaction.TransferRate = this.transferRate.value
+      }
+    else if(this.transferRate.clear){
+        this.Transaction.TransferRate = 0
+      }
+    else if(this.Transaction.TransferRate){
+      delete Transaction.TransferRate
+      };
+    //check for tick size
+    if(this.tickSize.set){
+        this.Transaction.TickSize = this.tickSize.value*1
+      }
+    else if(this.tickSize.clear){
+        this.Transaction.TickSize = 0
+      }
+    else if(this.Transaction.TickSize){
+      delete Transaction.TickSize
+      };
+    //check for flag
+    if(this.selected.value){
+      if(this.flagOnOff == 'enable'){
+        this.Transaction.SetFlag = this.selected.value
+        if(this.Transaction.ClearFlag){
+          delete Transaction.ClearFlag
+        }
+      }
+      else if(this.flagOnOff =='disable'){
+        this.Transaction.ClearFlag = this.selected.value
+        if(this.Transaction.SetFlag){
+          delete Transaction.SetFlag
+        }
+      }}
+      else if(this.Transaction.SetFlag){
+        delete Transaction.SetFlag
+      }
+      else if(this.Transaction.ClearFlag){
+        delete Transaction.ClearFlag
+      };
+      },
+
     signTx(){
       new RippledWsClientSign(this.Transaction, this.secret).then((SignedTransaction) => {
         this.signedTx = SignedTransaction
@@ -204,16 +493,74 @@ export default {
       else(this.LimitIssuerValid = false)
     },
 
-    onQrDecodeIssuer: function (decodedString) {
+    onQrDecodeEmail: function (decodedString) {
       console.log(decodedString);
-      this.LimitAmount.issuer = decodedString;
-      this.qrModeIssuer = false;
-      this.issuerCheck();
+      this.email.hash = decodedString;
+      this.qrModeEmail = false;
+      this.checkEmailHash();
     },
 
-    cancelIssuerQr(){
-      this.qrModeIssuer = false;
+    cancelEmailQr(){
+      this.qrModeEmail = false;
     },
+
+    onQrDecodeMessageKey: function (decodedString) {
+      console.log(decodedString);
+      this.messageKey.value = decodedString;
+      this.qrModeMessageKey = false;
+      this.checkMessageKey();
+    },
+
+    cancelMessageKeyQr(){
+      this.qrModeMessageKey = false;
+    },
+
+    checkDomain(){
+      this.domain.value = this.domain.value.trim();
+      this.domain.value = this.domain.value.replace(/^\/\/|^.*?:(\/\/)?/, ''); //removes http/s:
+      this.domain.value = this.domain.value.replace(/^www\./,''); //removes www.
+      this.domain.value = this.domain.value.toLowerCase();
+      this.domain.value = this.domain.value.trim();
+      
+    },
+
+    checkMessageKey(){
+      this.messageKey.value = this.messageKey.value.trim().toUpperCase();
+      var string = this.messageKey.value
+      if (string.match(/^[0-9A-Fa-f]{66}$/)){
+        this.messageKey.valid = true
+      }
+      else(this.messageKey.valid = false)
+    },
+
+    checkEmailHash(){
+      this.email.hash = this.email.hash.trim().toUpperCase();
+  
+      var string = this.email.hash
+      if (string.match(/^$|^[A-Fa-f0-9]{32}$/)){
+        this.email.valid = true
+      }
+      else(this.email.valid = false)
+    },
+
+    transferRateConvert(){
+        if(this.transferRate.bps>10000){
+          this.transferRate.bps = 10000
+        }
+        else if(this.transferRate.bps<0){
+          this.transferRate.bps =0
+        };
+        this.transferRate.percentage = (this.transferRate.bps/100).toFixed(7);
+        this.transferRate.value = this.transferRate.bps*100000+1000000000
+      },
+      tickSizeCheck(){
+        if(this.tickSize.value>15){
+          this.tickSize.value = 15
+        }
+        else if(this.tickSize.value<3){
+          this.tickSize.value =3
+        };
+      },
 
     
   },
@@ -221,7 +568,8 @@ export default {
       FeeXRP(){
           this.feeXRP = this.fee / 1000000;
           return this.feeXRP
-      }
+      },
+      
     
     
   
@@ -278,4 +626,35 @@ input:focus {
               }
     .drp-list:hover {color:#07e2ff;
                   background: grey;}
+                
+input:disabled[placeholder] {
+    background: black;
+   color:grey;
+}
+
+select{
+    background: black !important;
+    color:#FBCD4B;
+    font-size: 20px;
+    text-align: center;
+    text-align-last: center;
+   
+    
+}
+select:focus{
+    background: black !important;
+    color:lightskyblue;
+    font-size: 20px;
+    
+}
+
+
+
+
+   
+
+input[type="radio"] {
+  margin-top: -2px;
+  vertical-align: top;
+}
 </style>

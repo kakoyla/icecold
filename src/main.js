@@ -3,12 +3,11 @@
 import Vue from 'vue'
 import App from './App'
 import Popover from 'vue-js-popover'
-import VueQrcode from '@xkeshi/vue-qrcode';
+import VueQrcode from '@xkeshi/vue-qrcode'
 
 Vue.use(Popover)
 
-Vue.component(VueQrcode.name, VueQrcode);
-
+Vue.component(VueQrcode.name, VueQrcode)
 
 Vue.config.productionTip = false
 

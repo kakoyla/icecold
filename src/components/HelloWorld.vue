@@ -147,24 +147,26 @@
   <div v-if="proceed && !txType" class='container'> 
       <h4> Which type of transaction would you like to create? </h4>
       <button type="button" class="btn btn-lg btn-outline-success btn-block" style="font-size:26px;" v-on:click="display('Payment')">
-          Payment
+          <i class="fas fa-money-bill-alt"></i> Payment
         </button>
         <button type="button" class="btn btn-lg btn-outline-primary btn-block" style="font-size:26px;" v-on:click="display('TrustSet')">
-          Set Trust
+          <i class="fas fa-handshake"></i> Set Trust
+        </button>
+        <button type="button" class="btn btn-lg btn-outline-primary btn-block" style="font-size:26px;" v-on:click="display('AccountSet')">
+          <i class="fas fa-list-alt"></i> Set Account Options
         </button>
       <button type="button" class="btn btn-lg btn-outline-warning btn-block" style="font-size:26px;" v-on:click="display('SetRegularKey')">
-          Set Regular Key
+         <i class="fas fa-key"></i> Set Regular Key
         </button>
-<!--      <button type="button" class="btn btn-lg btn-outline-primary btn-block" style="font-size:26px;" v-on:click="display('AccountSet')">
-          Set Account Options
-        </button>
-      <button type="button" class="btn btn-lg btn-outline-primary btn-block" style="font-size:26px;" v-on:click="display('SignersListSet')" disabled>
+ <!--     
+       <button type="button" class="btn btn-lg btn-outline-primary btn-block" style="font-size:26px;" v-on:click="display('SignersListSet')" disabled>
           Set Signer List
         </button>
       <button type="button" class="btn btn-lg btn-outline-danger btn-block" style="font-size:26px;" v-on:click="display('DisableMaster')" disabled>
-          Disable Master Key
+          <i class="fas fa-exclamation-triangle"></i>  Disable Master Key
         </button>
--->
+  -->      
+
   </div>
   <!-- end Choose Tx Type -->
 

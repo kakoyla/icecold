@@ -22,8 +22,8 @@
             <div  v-if="destination.Valid" >
             <button type="button" @click="pymtStep('destinationTag')" class="btn btn-outline-primary btn-lg" style="color:white">NEXT</button>
             </div>
-            <div v-if="!destination.Valid && !qrModeDest" style="margin-top:50px; margin-bottom:50px;">  
-                <div style="margin-bottom:40px">or</div>
+            <div v-if="!destination.Valid && !qrModeDest" style="margin-top:10px; margin-bottom:10px;">  
+                <div style="margin-bottom:10px">or</div>
                 <button @click="qrModeDest=true" class="btn btn-outline-primary" type="button"><i class="fa fa-qrcode fa-5x" style="color:white;"></i></button>
                 <div style="font-size:20px;">Scan QR Code</div>
                 <h5 style="margin:20px;color:lightskyblue">Tip: Use your phone to look up the account on Bithomp, the QR Code will be displayed for easy scanning</h5>
@@ -108,8 +108,8 @@
             If you see this message, the issuer account is currently invalid. Please review and make sure the account begins with a lowercase letter
             "r", does not contain: capital letters "O" or "I", the lowercase letter "l" or the number "0" and is between 25 and 35 characters in length. 
         </h5>
-        <div v-if="!currencyAmount.valid && !qrModeIssuer" style="margin-top:50px; margin-bottom:50px;">  
-                <div style="margin-bottom:40px">or</div>
+        <div v-if="!currencyAmount.valid && !qrModeIssuer" style="margin-top:0px; margin-bottom:10px;">  
+                <div style="margin-bottom:10px">or</div>
                 <button @click="qrModeIssuer=true" class="btn btn-outline-primary" type="button"><i class="fa fa-qrcode fa-5x" style="color:white;"></i></button>
                 <div style="font-size:20px;">Scan QR Code</div>
                 <h5 style="margin:20px;color:lightskyblue">Tip: Use your phone to look up the account on Bithomp, the QR Code will be displayed for easy scanning</h5>
@@ -133,7 +133,7 @@
     <!-- Enter Payment Amount -->
     <div class="container" v-if="paymentStep =='enterAmount'">
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep='currencyType'" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep='currencyType', transFee.YN=null " >Back</button> 
         </div>
         <h4>Enter how much <span class="buttercup">{{cur2Send}}</span> you want to send</h4>
         <div v-if="cur2Send =='XRP'">
@@ -150,11 +150,57 @@
         	<input v-model="currencyAmount.value" type="number" rDpsdD9vTwkf1GiNkxunLLDBXsEXG9GNmk class="effect-2 no-border" maxlength=16 placeholder="0.00">
             <span class="focus-border"></span>
         </div>
-        <h5 style="margin:20px;color:lightskyblue">
-            Enter amount in {{cur2Send}}. Non-XRP currency values allow for up to 16 significant digits.
+        <h5 v-if="!currencyAmount.value" style="margin:20px;color:lightskyblue">
+            Enter amount in <span class="buttercup">{{cur2Send}}</span>. Non-XRP currency values allow for up to 16 significant digits.
             </h5>
+        <div v-if="(destination.Account != currencyAmount.issuer && walletAddress != currencyAmount.issuer ) && currencyAmount.value">
+        <h5 v-if="!transFee.YN" style="margin:20px;color:lightskyblue">
+            **If the issuer set a transfer fee for their issuances and you are not sending directly back to the issuer, your payment will fail without further information, **
+            </h5>
+        <div>
+        <h4> Does the issuer have a transfer fee setup?</h4>
+            <button type="button" class="btn btn-lg btn-outline-success btn-inline-block " :class= "{'active' : (transFee.YN =='yes')}" style="font-size:20px;margin:10px" v-on:click="transFee.YN = 'yes'">
+            Yes
+            </button>
+            <button type="button" class="btn btn-lg btn-outline-danger btn-inline-block " :class= "{'active' : (transFee.YN =='no')}" style="font-size:20px;margin:10px" v-on:click="transFee.YN = 'no'">
+            No
+            </button>
         </div>
-        <div v-if="currencyAmount.value || amountToSend">
+        <h5 v-if="!transFee.YN" style="margin:20px;color:lightskyblue"> *Hint: You can see if a transfer fee has been set by using Bithomp's XRP explorer (https://bithomp.com/explorer/) </h5>
+        <h5 v-if="!transFee.YN"> <img src="../../static/img/transferFee.png" width="250" height="350" alt="Mountain View"></h5>
+        <div v-if="transFee.YN =='yes'">
+        <div>
+        <h4> What is the transfer fee?</h4>
+        <h5 v-if="!transFee.input" class="lightskyblue"> Choose to enter as basis points or percentage</h5>
+        <div class="row">
+        <div class="col-sm-4"></div>
+        <div class="input-group mb-3 col-sm-4">
+        <div class="input-group-prepend">
+            <button class="btn btn-outline-primary" type="button" :class= "{'active' : (transFee.input =='bps')}" @click="transFee.input='bps', transFee.percentage=null">bps</button>
+            <button class="btn btn-outline-primary" type="button" :class= "{'active' : (transFee.input =='percent')}" @click="transFee.input='percent', transFee.bps=null">%</button>
+        </div>
+        <input v-if="transFee.input == 'bps'" v-model="transFee.bps" type="number" min=1 max=10000 class="form-control" @keyup="bpsCheck()">
+        <div v-if="transFee.input == 'bps'" class="inline lightskyblue" style="margin-left: 20px; font-size:20px">( {{transFee.bps /100 }} % ) </div>
+        <input v-if="transFee.input == 'percent'" v-model="transFee.percentage" min=1 max=100 type="number" class="form-control" @keyup="percentCheck()">
+        <div v-if="transFee.input == 'percent'" class="inline lightskyblue" style="margin-left: 20px; font-size:20px">( {{transFee.percentage *100}} bps ) </div>
+        </div>
+        <div class="col-sm-4"></div>
+        </div>
+        <div v-if="transFee.bps || transFee.percentage">
+        <h4>
+            After transfer fees the destination will receive <span class="lightskyblue"> {{ calcDeliver }} </span> <span class="buttercup"> {{ cur2Send }} </span>. 
+        </h4>
+        <button type="button" class="btn btn-lg btn-outline-success btn-block" :class= "{'active' : (partialPymt)}" style="font-size:26px;margin:10px" v-on:click="partialPymt = !partialPymt, sendMaxCreate()">
+            I Understand
+            </button>
+        </div>
+
+            
+        </div>
+        </div>
+        </div>
+        </div>
+        <div v-if="(currencyAmount.value && transFee.YN =='no') ||(destination.Account == currencyAmount.issuer || walletAddress == currencyAmount.issuer ) && currencyAmount.value ||(currencyAmount.value && transFee.YN =='yes' && (sendMax.valid || sendMin.valid || partialPymt)) || amountToSend">
          <button type="button" @click="pymtStep('enterMemo')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
         </div>
 
@@ -164,7 +210,7 @@
     <!-- Enter Memo -->
     <div class="container-fluid" v-if="paymentStep =='enterMemo'">
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep='enterAmount'" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep='enterAmount', partialPymt = false, sendMax.valid = false, sendMin.valid=false" >Back</button> 
         </div>
         <h4>Do you want to enter a Memo?</h4>
         <button type="button" class="btn btn-lg btn-outline-success btn-block" :class= "{'active' : (memoTag =='yes')}" style="font-size:26px;" v-on:click="MemoTag('yes')">
@@ -326,13 +372,32 @@ export default {
         issuer:null,
         value:null,
         valid:false,
-      },
+        },
+        transFee:{
+            YN: null,
+            bps:null,
+            percentage:null,
+            input:null,
+        },
+        partialPymt:false,
+      sendMax:{
+            valid:false,
+            currency:null,
+            issuer:null,
+            value:null,
+        },
+      sendMin:{
+            valid:false,
+            currency:null,
+            issuer:null,
+            value:null,
+        },
       curXrp:null,
       destination:{
           Account:null,
           Valid:false,
           Tag:null
-      },
+        },
       fee:10,
       memo:null,
       memoHex:null,
@@ -391,11 +456,24 @@ export default {
     if(this.cur2Send =="XRP"){        
         this.Transaction.Amount = this.amountToSend * 1000000 // Amount in drops, so multiply (6 decimal positions)
         }
-    else{this.Transaction.Amount= {
-        currency: this.currencyAmount.currency,
-        value: this.currencyAmount.value,
-        issuer: this.currencyAmount.issuer,
-    }}
+    else{
+        this.Transaction.Amount= {
+            currency: this.currencyAmount.currency,
+            value: this.currencyAmount.value,
+            issuer: this.currencyAmount.issuer,
+        };
+        if(this.partialPymt){
+            this.Transaction.Flags =131072 // tfFullyCanonicalSig 2147483648 +tfPartialPayment 131072
+    //        if(this.sendMax.valid){
+    //           this.Transaction.SendMax = {
+    //                currency: this.currencyAmount.currency,
+    //                value: this.currencyAmount.value,
+    //                issuer: this.currencyAmount.issuer,
+    //        };
+    //    }
+        }
+        
+        }
 
     if(this.destination.Tag){
         this.Transaction.DestinationTag = this.destination.Tag*1
@@ -471,6 +549,32 @@ export default {
       this.qrModeIssuer = false;
     },
 
+    bpsCheck() {
+        if(this.transFee.bps >10000){
+        this.transFee.bps = 10000;
+        }
+        else if (this.transFee.bps <0){
+            this.transFee.bps = null;
+        }
+    },
+
+    percentCheck() {
+        if(this.transFee.percentage >100){
+        this.transFee.percentage = 100;
+        }
+        else if (this.transFee.percentage <0){
+            this.transFee.percentage = null;
+        }
+    },
+
+    sendMaxCreate(){
+        this.sendMax.valid = true;
+        this.sendMax.currency = this.currencyAmount.currency;
+        this.sendMax.issuer = this.currencyAmount.issuer;
+        this.sendMax.value = this.currencyAmount.value;
+
+    },
+
     toHex(str){
 	var arr1 = [];
 	for (var n = 0, l = str.length; n < l; n ++) 
@@ -487,6 +591,16 @@ export default {
      FeeXRP(){
           this.feeXRP = this.fee / 1000000;
           return this.feeXRP
+      },
+      calcDeliver(){
+          let deliver
+          if(this.transFee.input == 'bps'){
+              deliver = this.currencyAmount.value /(this.transFee.bps/10000+1)
+          }
+          else if (this.transFee.input == 'percent'){
+              deliver = this.currencyAmount.value / (this.transFee.percentage/100 +1)
+          }
+          return deliver
       },
     
   
