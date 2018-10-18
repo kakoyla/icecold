@@ -98,12 +98,22 @@
         	<input class="effect-2 no-border" type="number" placeholder="enter in drops (10 drops = 0.000010xrp)" min=10 step=1 v-model="fee">
             <span class="focus-border"></span>
         </div>
+        <div v-if="!multiSignSetup">
         <h5 style="margin:20px;color:lightskyblue">
             Hint: The minimum fee currently allowed is 10 drops (0.000010 XRP). If the XRPL is busy, a transaction with a low fee might not be processed in a timely manner.  
         </h5>
         <h5 style="margin:20px;color:lightskyblue">
             Fee currently set to: <span class="buttercup"> {{ FeeXRP }} </span> XRP
         </h5>
+        </div>
+        <div v-if="multiSignSetup">
+        <h4 style="margin:20px;" class="neonRed">
+            Since this is a Multi-Sign Transaction the fee will be multiplied by the <span class="buttercup"> Number of signers +1</span>  
+        </h4>
+        <h5 style="margin:20px;color:lightskyblue">
+            Fee currently set to: <span class="buttercup"> {{ FeeXRP }} </span> XRP
+        </h5>
+        </div>
 
             <div  v-if="fee" >
             <button type="button" @click="RegKeyTag('ReviewTx'),prepTx()" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
@@ -131,16 +141,22 @@
         <h5 v-if="!Transaction.RegularKey" class="buttercup">
             The Regular Key is being removed so there is no RegularKey field
         </h5>
+        <div v-if="!multiSignSetup">  
         <h5 style="margin:20px;color:lightskyblue">
             After verifying the information above is correct, you can sign the transaction. 
             The next screen will provide you with the transaction blob, which you can submit on an online computer.
         </h5>
-
-        
-
-            <div>
             <button type="button" class="btn btn-lg btn-outline-success" style="margin:20px;color:white;font-size:30px" @click="signTx(), RegKeyTag('signedTx')" >Sign Transaction</button>
             </div>
+        <div v-if="multiSignSetup">
+        <h5 style="margin:20px;color:lightskyblue">
+            After verifying the information above is correct, you can apply the first signature to the transaction
+            
+        </h5>
+            <div>
+            <button type="button" class="btn btn-lg btn-outline-success" style="margin:20px;color:white;font-size:30px" @click="sendForSigning()" >Add Signature to Multi-Sign Transaction</button>
+            </div>
+    </div>
     </div> 
     <!-- end Review Tx -->
 
@@ -179,6 +195,7 @@ import RippledWsClientSign from "rippled-ws-client-sign";
 import VueQrcode from '@xkeshi/vue-qrcode';
 import Modalbtn from "./modalBtn";
 import { QrcodeReader } from 'vue-qrcode-reader';
+import { EventBus } from "./eventbus.js";
 
 
 export default {
@@ -187,7 +204,7 @@ export default {
   components: {
     VueQrcode,Modalbtn,QrcodeReader,
     },
-  props: ["walletAddress", "secret"],
+  props: ["walletAddress", "secret", "signerCount", "multiSignSetup"],
   data() {
     return {
       
@@ -238,6 +255,11 @@ export default {
     catch(err){
         console.log('no regular key set')
       }
+      if (this.multiSignSetup) {
+        this.Transaction.Fee =
+          Number(this.fee) * (Number(this.signerCount) + 1);
+        this.Transaction.SigningPubKey = "";
+      }
     
     },
     signTx(){
@@ -272,13 +294,25 @@ export default {
       this.qrModeRegularKey = false;
     },
 
+    sendForSigning() {
+      EventBus.$emit("addSigTx", this.Transaction);
+    }
+
     
   },
   computed: {
-      FeeXRP(){
-          this.feeXRP = this.fee / 1000000;
-          return this.feeXRP
+      FeeXRP() {
+      let feeXRP;
+
+      if (this.multiSignSetup) {
+        feeXRP = (this.fee * (Number(this.signerCount) + 1)) / 1000000;
+        return feeXRP;
+      } else {
+        feeXRP = this.fee / 1000000;
+        return feeXRP;
       }
+    },
+
     
     
   

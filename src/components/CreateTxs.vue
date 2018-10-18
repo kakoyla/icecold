@@ -50,7 +50,7 @@
           NO
         </button>
         <div v-if="destTag =='yes'" class="col-boom">
-        	<input class="effect-2 no-border" style="width:100%" type="number" placeholder="destination tag" min=0 max=4294967295 step=1  v-model="destination.Tag">
+        	<input class="effect-2 no-border" style="width:100%" type="number" placeholder="destination tag" min=0 max=4294967295 step=1  v-model="destination.Tag" @blur="dtCheck()">
             <span class="focus-border"></span>
         </div>
         
@@ -268,14 +268,25 @@
         	<input class="effect-2 no-border" type="number" placeholder="enter in drops (10 drops = 0.000010xrp)" min=10 step=1 v-model="fee">
             <span class="focus-border"></span>
         </div>
+        <div v-if="!multiSignSetup">
         <h5 style="margin:20px;color:lightskyblue">
             Hint: The minimum fee currently allowed is 10 drops (0.000010 XRP). If the XRPL is busy, a transaction with a low fee might not be processed in a timely manner.  
         </h5>
         <h5 style="margin:20px;color:lightskyblue">
+            Fee currently set to: <span class="buttercup"> {{ feeXRP }} </span> XRP
+        </h5>
+        </div>
+
+        <div v-if="multiSignSetup">
+        <h4 style="margin:20px;" class="neonRed">
+            Since this is a Multi-Sign Transaction the fee will be multiplied by the <span class="buttercup"> Number of signers +1</span>  
+        </h4>
+        <h5 style="margin:20px;color:lightskyblue">
             Fee currently set to: <span class="buttercup"> {{ FeeXRP }} </span> XRP
         </h5>
+        </div>
 
-            <div  v-if="Sequence" >
+            <div  v-if="fee" >
             <button type="button" @click="pymtStep('ReviewPayment'),prepPymt()" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
             </div>
     </div> 
@@ -283,9 +294,11 @@
 
      <!-- Review Payment -->
     <div v-if="paymentStep =='ReviewPayment'">
+      
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
             <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep='enterFee'" >Back</button> 
         </div>
+        
         <h4 class="buttercup" style="margin:20px"><u> Please review your payment information:</u></h4>
         
         <div v-for="(value,key) in Transaction">
@@ -298,7 +311,7 @@
                 </div>
             </div>
         </div>
-
+    <div v-if="!multiSignSetup">       
         <h5 style="margin:20px;color:lightskyblue">
             After verifying the information above is correct, you can sign the transaction. 
             The next screen will provide you with the transaction blob, which you can submit on an online computer.
@@ -307,9 +320,22 @@
 
         
 
-            <div>
+            
             <button type="button" class="btn btn-lg btn-outline-success" style="margin:20px;color:white;font-size:30px" @click="signTx(), pymtStep('signedTx')" >Sign Transaction</button>
             </div>
+    <div v-if="multiSignSetup">
+        <h5 style="margin:20px;color:lightskyblue">
+            After verifying the information above is correct, you can apply the first signature to the transaction
+            
+        </h5>
+            <div>
+            <button type="button" class="btn btn-lg btn-outline-success" style="margin:20px;color:white;font-size:30px" @click="sendForSigning()" >Add Signature to Multi-Sign Transaction</button>
+            </div>
+    </div>
+
+    
+
+
     </div> 
     <!-- end Review Payment -->
 
@@ -320,7 +346,7 @@
         </div>
         <h4 class="buttercup" style=""> Here is the Signed Transaction:</h4>
 
-        <div style="color:lightskyblue;word-wrap: break-word;">{{Transaction}}</div>
+        <div style="color:lightskyblue;word-wrap: break-word;">{{decodeTxBlob}}</div>
 
         <div v-if="txblob" style="margin-top:15px; word-wrap: break-word;">
       <label for="txJson"><span class="badge badge-success" style="margin-top:20px;font-size:25px">TX Blob:</span></label>
@@ -352,67 +378,69 @@
 <script>
 import RippledWsClientSign from "rippled-ws-client-sign";
 import { EventBus } from "./eventbus.js";
-import VueQrcode from '@xkeshi/vue-qrcode';
+import VueQrcode from "@xkeshi/vue-qrcode";
 import Modalbtn from "./modalBtn";
-import { QrcodeReader } from 'vue-qrcode-reader';
-
+import { QrcodeReader } from "vue-qrcode-reader";
+import binary from "ripple-binary-codec";
 
 export default {
   name: "CreateTxs",
 
   components: {
-    VueQrcode,Modalbtn,QrcodeReader,
-    },
-  props: ["walletAddress", "secret"],
+    VueQrcode,
+    Modalbtn,
+    QrcodeReader
+  },
+  props: ["walletAddress", "secret", "signerCount", "multiSignSetup"],
   data() {
     return {
-      amountToSend:null,
-      currencyAmount:{
-        currency:null,
-        issuer:null,
-        value:null,
-        valid:false,
-        },
-        transFee:{
-            YN: null,
-            bps:null,
-            percentage:null,
-            input:null,
-        },
-        partialPymt:false,
-      sendMax:{
-            valid:false,
-            currency:null,
-            issuer:null,
-            value:null,
-        },
-      sendMin:{
-            valid:false,
-            currency:null,
-            issuer:null,
-            value:null,
-        },
-      curXrp:null,
-      destination:{
-          Account:null,
-          Valid:false,
-          Tag:null
-        },
-      fee:10,
-      memo:null,
-      memoHex:null,
-      qrModeDest:false,
-      qrModeIssuer:false,
-      Sequence:null,
-      signedTx:null,
-      Transaction:{},
-      txblob:false,
+      amountToSend: null,
+      currencyAmount: {
+        currency: null,
+        issuer: null,
+        value: null,
+        valid: false
+      },
+      transFee: {
+        YN: null,
+        bps: null,
+        percentage: null,
+        input: null
+      },
+      partialPymt: false,
+      sendMax: {
+        valid: false,
+        currency: null,
+        issuer: null,
+        value: null
+      },
+      sendMin: {
+        valid: false,
+        currency: null,
+        issuer: null,
+        value: null
+      },
+      curXrp: null,
+      destination: {
+        Account: null,
+        Valid: false,
+        Tag: null
+      },
+      fee: 10,
+      memo: null,
+      memoHex: null,
+      qrModeDest: false,
+      qrModeIssuer: false,
+      Sequence: null,
+      signedTx: null,
+      Transaction: {},
+      txblob: false,
       txType: null,
       paymentStep: null,
-      destTag:null,
-      cur2Send:null,
-      memoTag:null,
-      feeXRP:null,
+      destTag: null,
+      cur2Send: null,
+      memoTag: null,
+      feeXRP: null
     };
   },
   mounted() {},
@@ -438,71 +466,98 @@ export default {
       this.curXrp = curXrp;
     },
 
-
-    prepPymt(){
-      
-      
-    this.txblob=false
-    if(this.signedTx && this.signedTx.tx_blob){
-      this.signedTx.tx_blob = null
+    prepPymt() {
+      this.txblob = false;
+      if (this.signedTx && this.signedTx.tx_blob) {
+        this.signedTx.tx_blob = null;
       }
-    this.Transaction = {
-              TransactionType: 'Payment',
-              Account: this.walletAddress,
-              Fee: this.fee,
-              Destination: this.destination.Account,
-              Sequence: this.Sequence *1,
-            };
-    if(this.cur2Send =="XRP"){        
-        this.Transaction.Amount = this.amountToSend * 1000000 // Amount in drops, so multiply (6 decimal positions)
-        }
-    else{
-        this.Transaction.Amount= {
-            currency: this.currencyAmount.currency,
-            value: this.currencyAmount.value,
-            issuer: this.currencyAmount.issuer,
+      this.Transaction = {
+        TransactionType: "Payment",
+        Account: this.walletAddress,
+        Fee: this.fee,
+        Destination: this.destination.Account,
+        Sequence: this.Sequence * 1
+      };
+      if (this.cur2Send == "XRP") {
+        this.Transaction.Amount = this.amountToSend * 1000000; // Amount in drops, so multiply (6 decimal positions)
+      } else {
+        this.Transaction.Amount = {
+          currency: this.currencyAmount.currency,
+          value: this.currencyAmount.value,
+          issuer: this.currencyAmount.issuer
         };
-        if(this.partialPymt){
-            this.Transaction.Flags =131072 // tfFullyCanonicalSig 2147483648 +tfPartialPayment 131072
-    //        if(this.sendMax.valid){
-    //           this.Transaction.SendMax = {
-    //                currency: this.currencyAmount.currency,
-    //                value: this.currencyAmount.value,
-    //                issuer: this.currencyAmount.issuer,
-    //        };
-    //    }
+        if (this.partialPymt) {
+          this.Transaction.Flags = 131072; // tfFullyCanonicalSig 2147483648 +tfPartialPayment 131072
+          //        if(this.sendMax.valid){
+          //           this.Transaction.SendMax = {
+          //                currency: this.currencyAmount.currency,
+          //                value: this.currencyAmount.value,
+          //                issuer: this.currencyAmount.issuer,
+          //        };
+          //    }
         }
-        
-        }
-
-    if(this.destination.Tag){
-        this.Transaction.DestinationTag = this.destination.Tag*1
-    }
-    else if(this.Transaction.DestinationTag){
-        delete Transaction.DestinationTag
-    }
-
-    if(this.memo){
-        this.Transaction.Memos = [{Memo:{MemoData: Buffer.from(this.memo, 'utf8').toString('hex').toUpperCase()}}];
-        
       }
-      else if (this.Transaction.Memos){
-        delete Transaction.Memos
+
+      if (this.destination.Tag) {
+        this.Transaction.DestinationTag = this.destination.Tag * 1;
+      } else if (this.Transaction.DestinationTag) {
+        delete Transaction.DestinationTag;
+      }
+
+      if (this.memo) {
+        this.Transaction.Memos = [
+          {
+            Memo: {
+              MemoData: Buffer.from(this.memo, "utf8")
+                .toString("hex")
+                .toUpperCase()
+            }
+          }
+        ];
+      } else if (this.Transaction.Memos) {
+        delete Transaction.Memos;
+      }
+      if (this.multiSignSetup) {
+        this.Transaction.Fee =
+          Number(this.fee) * (Number(this.signerCount) + 1);
+        this.Transaction.SigningPubKey = "";
       }
     },
-    signTx(){
-      new RippledWsClientSign(this.Transaction, this.secret).then((SignedTransaction) => {
-        this.signedTx = SignedTransaction
 
-  
-          console.log('SignedTransaction', SignedTransaction)
-          this.txblob=true
-      }).catch((SignError) => {
-          console.log('SignError', SignError.details)
-          alert('There was an error when signing, see console log')
-      })
+    signTx() {
+      if (this.Transaction.SigningPubKey) {
+        delete this.Transaction.SigningPubKey;
+      }
+      new RippledWsClientSign(this.Transaction, this.secret)
+        .then(SignedTransaction => {
+          this.signedTx = SignedTransaction;
+
+          console.log("SignedTransaction", SignedTransaction);
+          this.txblob = true;
+        })
+        .catch(SignError => {
+          console.log("SignError", SignError.details);
+          alert("There was an error when signing, see console log");
+        });
     },
-    onQrDecodeDestination: function (decodedString) {
+
+    MultisignTx() {
+      this.Transaction.SigningPubKey = "";
+      this.multiSigSecret = [this.secret];
+      new RippledWsClientSign(this.Transaction, this.multiSigSecret)
+        .then(SignedTransaction => {
+          this.signedTx = SignedTransaction;
+
+          console.log("SignedTransaction", SignedTransaction);
+          this.txblob = true;
+        })
+        .catch(SignError => {
+          console.log("SignError", SignError.details);
+          alert("There was an error when signing, see console log");
+        });
+    },
+
+    onQrDecodeDestination: function(decodedString) {
       console.log(decodedString);
       this.destination.Account = decodedString;
       this.qrModeDest = false;
@@ -510,103 +565,124 @@ export default {
     },
 
     destinationCheck() {
-        this.destination.Account = this.destination.Account.trim();
-      var string = this.destination.Account
-      if (string.match(/^r[a-k+m-z+A-H+J-N+P-Z0-9]{25,}/) && string.length >= 25 && string.length <= 35) {
-        this.destination.Valid = true
-      }
-      else(this.destination.Valid = false)
+      this.destination.Account = this.destination.Account.trim();
+      var string = this.destination.Account;
+      if (
+        string.match(/^r[a-k+m-z+A-H+J-N+P-Z0-9]{25,}/) &&
+        string.length >= 25 &&
+        string.length <= 35
+      ) {
+        this.destination.Valid = true;
+      } else this.destination.Valid = false;
     },
+
+    dtCheck() {
+      if(this.destination.Tag<0){
+      this.destination.Tag = null  
+      }
+      else if(this.destination.Tag >4294967295){
+      this.destination.Tag =null}
+    },
+
 
     issuerCheck() {
-        this.currencyAmount.issuer = this.currencyAmount.issuer.trim();
-      var string = this.currencyAmount.issuer
-      if (string.match(/^r[a-k+m-z+A-H+J-N+P-Z0-9]{25,}/) && string.length >= 25 && string.length <= 35) {
-        this.currencyAmount.valid = true
-      }
-      else(this.currencyAmount.valid = false)
+      this.currencyAmount.issuer = this.currencyAmount.issuer.trim();
+      var string = this.currencyAmount.issuer;
+      if (
+        string.match(/^r[a-k+m-z+A-H+J-N+P-Z0-9]{25,}/) &&
+        string.length >= 25 &&
+        string.length <= 35
+      ) {
+        this.currencyAmount.valid = true;
+      } else this.currencyAmount.valid = false;
     },
 
-    onQrDecodeIssuer: function (decodedString) {
+    onQrDecodeIssuer: function(decodedString) {
       console.log(decodedString);
       this.currencyAmount.issuer = decodedString;
       this.qrModeIssuer = false;
       this.issuerCheck();
     },
-    currency2Send: function () {
-      if(this.curXrp =='XRP'){
-          this.cur2Send = "XRP"
-          }
-        else{
-              this.cur2Send = this.currencyAmount.currency
-              }
-      },
+    currency2Send: function() {
+      if (this.curXrp == "XRP") {
+        this.cur2Send = "XRP";
+      } else {
+        this.cur2Send = this.currencyAmount.currency;
+      }
+    },
 
-    cancelDestQr(){
+    cancelDestQr() {
       this.qrModeDest = false;
     },
-    cancelIssuerQr(){
+    cancelIssuerQr() {
       this.qrModeIssuer = false;
     },
 
     bpsCheck() {
-        if(this.transFee.bps >10000){
+      if (this.transFee.bps > 10000) {
         this.transFee.bps = 10000;
-        }
-        else if (this.transFee.bps <0){
-            this.transFee.bps = null;
-        }
+      } else if (this.transFee.bps < 0) {
+        this.transFee.bps = null;
+      }
     },
 
     percentCheck() {
-        if(this.transFee.percentage >100){
+      if (this.transFee.percentage > 100) {
         this.transFee.percentage = 100;
-        }
-        else if (this.transFee.percentage <0){
-            this.transFee.percentage = null;
-        }
+      } else if (this.transFee.percentage < 0) {
+        this.transFee.percentage = null;
+      }
     },
 
-    sendMaxCreate(){
-        this.sendMax.valid = true;
-        this.sendMax.currency = this.currencyAmount.currency;
-        this.sendMax.issuer = this.currencyAmount.issuer;
-        this.sendMax.value = this.currencyAmount.value;
-
+    sendMaxCreate() {
+      this.sendMax.valid = true;
+      this.sendMax.currency = this.currencyAmount.currency;
+      this.sendMax.issuer = this.currencyAmount.issuer;
+      this.sendMax.value = this.currencyAmount.value;
     },
 
-    toHex(str){
-	var arr1 = [];
-	for (var n = 0, l = str.length; n < l; n ++) 
-     {
-		var hex = Number(str.charCodeAt(n)).toString(16);
-		arr1.push(hex);
-	 };
-	return arr1.join('');
-   },
+    toHex(str) {
+      var arr1 = [];
+      for (var n = 0, l = str.length; n < l; n++) {
+        var hex = Number(str.charCodeAt(n)).toString(16);
+        arr1.push(hex);
+      }
+      return arr1.join("");
+    },
 
-    
+    sendForSigning() {
+      EventBus.$emit("addSigTx", this.Transaction);
+    }
   },
-  computed: {
-     FeeXRP(){
-          this.feeXRP = this.fee / 1000000;
-          return this.feeXRP
-      },
-      calcDeliver(){
-          let deliver
-          if(this.transFee.input == 'bps'){
-              deliver = this.currencyAmount.value /(this.transFee.bps/10000+1)
-          }
-          else if (this.transFee.input == 'percent'){
-              deliver = this.currencyAmount.value / (this.transFee.percentage/100 +1)
-          }
-          return deliver
-      },
-    
-  
-      },
-    
 
+  computed: {
+    FeeXRP() {
+      let feeXRP;
+
+      if (this.multiSignSetup) {
+        feeXRP = (this.fee * (Number(this.signerCount) + 1)) / 1000000;
+        return feeXRP;
+      } else {
+        feeXRP = this.fee / 1000000;
+        return feeXRP;
+      }
+    },
+
+    calcDeliver() {
+      let deliver;
+      if (this.transFee.input == "bps") {
+        deliver = this.currencyAmount.value / (this.transFee.bps / 10000 + 1);
+      } else if (this.transFee.input == "percent") {
+        deliver =
+          this.currencyAmount.value / (this.transFee.percentage / 100 + 1);
+      }
+      return deliver;
+    },
+
+    decodeTxBlob() {
+      return binary.decode(this.signedTx.tx_blob);
+    }
+  }
 };
 </script>
 
@@ -615,7 +691,7 @@ input {
   text-align: center;
   background: black;
   /*background: #343a40; */
-  color: #FBCD4B;
+  color: #fbcd4b;
   font-size: 22px;
 }
 input::-webkit-input-placeholder {
@@ -643,18 +719,21 @@ input:-ms-input-placeholder {
 }
 
 input:focus {
-    background-color: black;
+  background-color: black;
   /*background-color: #343a40;*/
   color: lightskyblue;
 }
 
-    .dropdown-item { font-family: Lato, Arial, Tahoma, Verdana;
-                font-size: 1em;
-                line-height: 1.5em;
-                color: #07e2ff;
-                font-weight: 500;
-                text-shadow: none;
-              }
-    .drp-list:hover {color:#07e2ff;
-                  background: grey;}
+.dropdown-item {
+  font-family: Lato, Arial, Tahoma, Verdana;
+  font-size: 1em;
+  line-height: 1.5em;
+  color: #07e2ff;
+  font-weight: 500;
+  text-shadow: none;
+}
+.drp-list:hover {
+  color: #07e2ff;
+  background: grey;
+}
 </style>

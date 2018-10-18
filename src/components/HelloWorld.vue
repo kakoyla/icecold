@@ -1,23 +1,36 @@
 <template>
   <div class="bg-black text-light container-fluid">
+    <!--Get Initiating info -->
     <div v-if="!proceed">
-       <img src="../../static/img/xrp-symbol-white.svg" width="200" height="200" style="margin-bottom:10px">
+       <img src="../../static/img/xrp-symbol-white.svg" width="100" height="100" style="margin-bottom:10px">
      
       <!--Ask Standard Key Pair or Regular Key -->
       <div class="container" v-if="UseRegularKey ==null"> 
-      <h4>Are you using Standard Key Pair or Regular Key</h4>
+      <h4>Choose your signing method:</h4>
         <button type="button" class="btn btn-lg btn-outline-success btn-block" style="font-size:26px;" v-on:click="RegKeyTag('NO')">
           Standard Key Pair
         </button>
       <button type="button" class="btn btn-lg btn-outline-primary btn-block" style="font-size:26px;" v-on:click="RegKeyTag('YES')">
           Regular Key
         </button>
+      <button type="button" class="btn btn-lg btn-outline-warning btn-block" style="font-size:26px;" v-on:click="RegKeyTag('MULTI'), multiSignSetup=true">
+          Multi-Sign
+        </button>
+      <button type="button" class="btn btn-lg btn-outline-danger btn-block" style="font-size:26px;" v-on:click="RegKeyTag('ADDSIG')">
+          Add Signature
+      </button>
         <h5 style="margin:20px;color:lightskyblue">
             If you do not know choose <span class="text-success">Standard Key Pair</span>.
         </h5> 
         <h5 style="margin:20px;color:lightskyblue">
             A <span class="text-primary">Regular Key</span> lets you sign with a secret from a different account, 
             but must be setup first. 
+        </h5>
+        <h5 style="margin:20px;color:lightskyblue">
+            If you plan on Multi-Signing choose <span class="text-warning"> Multi-Sign </span> to setup the transaction.
+        </h5>
+        <h5 style="margin:20px;color:lightskyblue">
+            Choose <span class="text-danger">Add Signature</span> if you are adding an additional signature to an already created <span class="text-warning">Multi-Sign</span> transaction.
         </h5>
       </div>
       <!--END Ask Standard Key Pair or Regular Key -->
@@ -142,7 +155,91 @@
     </div> 
     <!--end Standard Key Pair -->
 
+    <!--Create Multi-Sig Transaction -->
+    <div v-if=" UseRegularKey == 'MULTI'">
+    <div v-if="!qrModeRegKeyAcct" class="container" style="height:100%;width:100%;">
+     
+     <!--Enter Initiating Account -->
+    
+    <h4>Enter the Multi-Sig Account which will be initiating the Transaction</h4>
+    <div class="col-boom">
+        	<input class="effect-2 no-border" type="text" placeholder="r............................."  v-model="initiatingAcct" @blur="initAcctCheck()">
+            <span class="focus-border"></span>
     </div>
+    <h5 v-if="!initAcctValid" style="margin:20px;color:lightskyblue">
+            If you see this message, the initiating account is currently invalid. Please review and make sure the account begins with a lowercase letter
+            "r", does not contain: capital letters "O" or "I", the lowercase letter "l" or the number "0" and is between 25 and 35 characters in length. 
+    </h5>
+      <div v-if="!initAcctValid" style="margin-top:50px; margin-bottom:50px;">  
+      <div style="margin-bottom:40px">or</div>
+        <button @click="qrModeRegKeyAcct=true" class="btn btn-outline-primary" type="button">
+          <i class="fa fa-qrcode fa-5x" style="color:white;"></i>
+        </button>
+      <div style="font-size:20px;">Scan QR Code</div>
+    </div>
+    <div v-if="initiatingAcct && initAcctValid" class="container">
+      
+      <h5 style="margin:20px">
+            How Many Signers will be Signing this Transaction prior to Submission?
+    </h5>
+    <div class="col-boom">
+        	<input type="number" min=1 max=8 step=1 class="rounded" style="border-color: #FBCD4B; width:40%; border-width:5px  " placeholder="number of signers" v-model="signerCount" @keyup="checkSignerCount()">
+            
+        </div>
+        <h5 style="margin:20px;color:lightskyblue">
+           The fee you set later on will be multiplied by the number of signers +1.  
+        </h5>
+
+      <div v-if="initiatingAcct && signerCount" style="margin-top:50px; margin-bottom:50px;">  
+        <button @click="walletAddress=initiatingAcct, proceed = true" class="btn btn-outline-primary btn-lg" style="color:white" type="button">NEXT</button>
+      </div>
+    </div>    
+    </div>
+     <!--End Enter Initiating Account -->
+     <div v-if= "qrModeRegKeyAcct">
+      <qrcodeReader @decode="onQrDecodeInitAcct"> </qrcodeReader>
+      <button type="button" class="btn btn-outline-primary" style="color:white; margin-top:10px" v-on:click ="cancelInitAcctQr()">
+            Cancel
+      </button>
+    </div>
+    </div> <!--end Create Multi-Sig Transaction -->
+
+    <!--Enter Additional Signature Key Pair -->
+    <div v-if=" UseRegularKey == 'ADDSIG' ">
+    <div v-if="!qrModeSigningSeed">
+    <div class="container" style="height:100%;width:100%;">
+     
+         
+    <h4> Enter the Secret for the Account you want to sign the Multi-Sig transaction with </h4>
+    <div class="col-boom">
+        	<input class="effect-2 no-border" type="text" placeholder="Enter Secret"  v-model="signingSeed" @blur="getSigningKeypair()">
+            <span class="focus-border"></span>
+            </div>
+        </div>
+    <div v-if="signingAddress" class="container">
+      <div class="text-light" style="font-size:20px;">signing wallet address: </div>
+    <div class="buttercup" style="font-size:36px;"> {{signingAddress}} </div> 
+     <div v-if="signingAddress" style="margin-top:50px; margin-bottom:50px;">  
+    <button @click="proceed=true, txType ='Add Signature'" class="btn btn-outline-primary btn-lg" style="color:white" type="button">NEXT</button>
+    </div>
+    </div>
+    <div v-if="signingAddress == null" style="margin-top:50px; margin-bottom:50px;">  
+      <div style="margin-bottom:40px">or</div>
+    <button @click="qrModeSigningSeed=true" class="btn btn-outline-primary" type="button"><i class="fa fa-qrcode fa-5x" style="color:white;"></i></button>
+      <div style="font-size:20px;">Scan QR Code</div>
+    </div>
+    
+    </div>
+    <div v-if= "qrModeSigningSeed">
+      <qrcodeReader @decode="onQrSigningDecode"> </qrcodeReader>
+      <button type="button" class="btn btn-outline-primary" style="color:white; margin-top:10px" v-on:click ="cancelSigningSeedQr()">
+            Cancel
+      </button>
+    </div>
+    </div> 
+    <!--END Enter Additional Signature Key Pair -->
+
+    </div> <!--end get initiating info -->
     <!-- Chose Tx Type -->
   <div v-if="proceed && !txType" class='container'> 
       <h4> Which type of transaction would you like to create? </h4>
@@ -155,13 +252,17 @@
         <button type="button" class="btn btn-lg btn-outline-primary btn-block" style="font-size:26px;" v-on:click="display('AccountSet')">
           <i class="fas fa-list-alt"></i> Set Account Options
         </button>
-      <button type="button" class="btn btn-lg btn-outline-warning btn-block" style="font-size:26px;" v-on:click="display('SetRegularKey')">
+        <button type="button" class="btn btn-lg btn-outline-warning btn-block" style="font-size:26px;" v-on:click="display('SetRegularKey')">
          <i class="fas fa-key"></i> Set Regular Key
         </button>
- <!--     
-       <button type="button" class="btn btn-lg btn-outline-primary btn-block" style="font-size:26px;" v-on:click="display('SignersListSet')" disabled>
+        <button type="button" class="btn btn-lg btn-outline-warning btn-block" style="font-size:26px;" v-on:click="display('SetSignerList')">
           Set Signer List
         </button>
+        <button type="button" class="btn btn-lg btn-outline-warning btn-block" style="font-size:26px;" v-on:click="display('DepositPreauth')">
+         <i class="fas fa-clipboard-check"></i> Authorize Deposit Accounts
+        </button>     
+
+         <!--
       <button type="button" class="btn btn-lg btn-outline-danger btn-block" style="font-size:26px;" v-on:click="display('DisableMaster')" disabled>
           <i class="fas fa-exclamation-triangle"></i>  Disable Master Key
         </button>
@@ -172,22 +273,37 @@
 
   <!--PAYMENTS-->
   <div v-if="proceed && txType =='Payment'" class="container" style="height:100%;width:100%;">
-    <CreateTxs :walletAddress="walletAddress" :secret="seed" > </CreateTxs>
+    <CreateTxs :walletAddress="walletAddress" :secret="seed" :signerCount="signerCount" :multiSignSetup="multiSignSetup" > </CreateTxs>
   </div>
 
   <!--SET REGULAR KEYS -->
   <div v-if="proceed && txType =='SetRegularKey'" class="container" style="height:100%;width:100%;">
-    <SetRegularKey :walletAddress="walletAddress" :secret="seed" > </SetRegularKey>
+    <SetRegularKey :walletAddress="walletAddress" :secret="seed" :signerCount="signerCount" :multiSignSetup="multiSignSetup"> </SetRegularKey>
   </div>
 
   <!--SET TRUST -->
   <div v-if="proceed && txType =='TrustSet'" class="container" style="height:100%;width:100%;">
-    <TrustSet :walletAddress="walletAddress" :secret="seed" > </TrustSet>
+    <TrustSet :walletAddress="walletAddress" :secret="seed" :signerCount="signerCount" :multiSignSetup="multiSignSetup"> </TrustSet>
   </div>
   
   <!--Account Set -->
   <div v-if="proceed && txType =='AccountSet'" class="container" style="height:100%;width:100%;">
-    <AccountSet :walletAddress="walletAddress" :secret="seed" > </AccountSet>
+    <AccountSet :walletAddress="walletAddress" :secret="seed" :signerCount="signerCount" :multiSignSetup="multiSignSetup"> </AccountSet>
+  </div>
+
+  <!--Deposit PreAuthorize -->
+  <div v-if="proceed && txType =='DepositPreauth'" class="container" style="height:100%;width:100%;">
+    <DepPreAuth :walletAddress="walletAddress" :secret="seed" :signerCount="signerCount" :multiSignSetup="multiSignSetup"> </DepPreAuth>
+  </div>
+
+  <!--Set Signer List -->
+  <div v-if="proceed && txType =='SetSignerList'" class="container" style="height:100%;width:100%;">
+    <SetSignerList :walletAddress="walletAddress" :secret="seed" :signerCount="signerCount" :multiSignSetup="multiSignSetup"> </SetSignerList>
+  </div>
+
+  <!--Add Signature -->
+  <div v-if="proceed && txType =='Add Signature'" class="container" style="height:100%;width:100%;">
+    <AddSignature :signingAddress="signingAddress" :signingSecret="signingSeed" :tx="tx"> </AddSignature>
   </div>
 
   <div class="" style="position: fixed; bottom: 20px; right: 20px;">  
@@ -207,6 +323,9 @@ import CreateTxs from './CreateTxs';
 import SetRegularKey from './setRegularKey';
 import TrustSet from './TrustSet';
 import AccountSet from './AccountSet';
+import DepPreAuth from './DepPreAuth';
+import SetSignerList from './SetSignerList';
+import AddSignature from './AddSignature';
 import { EventBus } from "./eventbus.js";
 
 export default {
@@ -217,7 +336,17 @@ export default {
     SetRegularKey,
     TrustSet,
     AccountSet,
+    DepPreAuth,
+    SetSignerList,
+    AddSignature,
   },
+
+  mounted() {
+    EventBus.$on('addSigTx', tx => {
+      this.addSig(tx)
+    })
+  },
+
   data () {
     return {
       seed:null,
@@ -225,6 +354,12 @@ export default {
       keypair:null,
       keypairs:null,
       qrModeSeed:false,
+
+      signingSeed:null,
+      signingAddress:null,
+      qrModeSigningSeed:null,
+      signingKeypair:null,
+
       proceed:false,
       UseRegularKey: null,
       initiatingAcct:null,
@@ -235,14 +370,36 @@ export default {
       regularKeyAddress:null,
       qrModeRegKeySecret:false,
       txType:null,
+      multiSignSetup:false,
+      signerCount:null,
+      tx:null,
+
+      
 
 
     }
   },
   methods: {
 
+    addSig(tx){
+      this.tx = tx;
+      this.proceed = false;
+      this.txType = null;
+      this.UseRegularKey = 'ADDSIG';
+
+    },
+
     display: function(txType) {
       this.txType = txType;
+    },
+
+    checkSignerCount() {
+      if(this.signerCount>8){
+        this.signerCount = 8
+      }
+      else if(this.signerCount <1){
+        this.signerCount = null
+      }
     },
 
     RegKeyTag: function(regKey) {
@@ -260,6 +417,19 @@ export default {
         alert('Secret entered is invalid, please review your input. Secret should begin with a lowercase "s"')
       }
     },
+
+    getSigningKeypair() {
+      this.signingSeed = this.signingSeed.trim()
+     
+      try {
+      this.signingKeypair = keypairs.deriveKeypair(this.signingSeed);
+      this.signingAddress = keypairs.deriveAddress(this.signingKeypair.publicKey)
+        }
+      catch(err){
+        alert('Secret entered is invalid, please review your input. Secret should begin with a lowercase "s"')
+      }
+    },
+
     getKeypairRegularKeySecret() {
       this.regularKeySecret = this.regularKeySecret.trim()
      
@@ -274,18 +444,30 @@ export default {
     },  
 
     resetKeypair (){
-      this.keypair = null;
-      this.walletAddress = null;
-      this.seed = null;
-      this.proceed = false;
-      this.qrModeSeed = false;
-      this.UseRegularKey = null;
-      this.txType = null;
-      this.initiatingSet = false;
-      this.initAcctValid = false;
-      this.initiatingAcct = null;
-      this.regularKeyAddress = null;
-      this.regularKeySecret = null;
+
+      this.seed = null
+      this.walletAddress=null
+      this.keypair=null
+      this.keypairs=null
+      this.qrModeSeed=false
+      this.proceed=false
+      this.UseRegularKey= null
+      this.initiatingAcct=null
+      this.initAcctValid=false
+      this.qrModeRegKeyAcct=false
+      this.initiatingSet=false
+      this.regularKeySecret=null
+      this.regularKeyAddress=null
+      this.qrModeRegKeySecret=false
+      this.txType=null
+      this.multiSignSetup=false
+      this.signerCount=null
+      this.signingSeed=null
+      this.signingAddress=null
+      this.qrModeSigningSeed=null
+      this.signingKeypair=null
+      this.tx=null
+      
     },
     onQrDecode: function (decodedString) {
       this.seed = decodedString;
@@ -295,6 +477,15 @@ export default {
     cancelSeedQr(){
       this.qrModeSeed = false;
     },
+    onQrSigningDecode: function (decodedString) {
+      this.signingSeed = decodedString;
+      this.qrModeSigningSeed = false;
+      this.getSigningKeypair();
+    },
+    cancelSigningSeedQr(){
+      this.qrModeSigningSeed = false;
+    },
+
     onQrDecodeInitAcct: function (decodedString) {
       this.initiatingAcct = decodedString;
       this.qrModeRegKeyAcct = false;

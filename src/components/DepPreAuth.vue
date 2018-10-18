@@ -1,67 +1,62 @@
 <template>
   <div class="container">
     
-    <div v-if="!regKeyTag">
+    <div v-if="!preAuthTag">
     <div style="text-align:left; margin-bottom:40px"> <!--back button -->
             <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="$parent.txType=null" >Back</button> 
         </div>
-    <h4>What is the Currency Code you want to add a Trust line for? </h4>
-    <div class="col-boom">
-        	<input v-model="LimitAmount.currency" type="text" class="form-control" maxlength="3" minlength="3" placeholder="ex: USD / BTC / etc">
-            <span class="focus-border"></span>
+    <h4>Do you want to Authorize or Unauthorize an Account for Deposits? </h4>
+    <h5 style="margin:20px;color:lightskyblue">
+        You need to make sure the accounts Deposit Authorization  
+        </h5>
+
+    <div>
+        <button type="button" class="btn btn-lg btn-outline-success btn-inline-block " :class= "{'active' : (AuthUnauth =='authorize')}" style="font-size:26px;margin-top:10px" v-on:click="AuthUnauth = 'authorize'">
+        Authorize
+        </button>
+        <button type="button" class="btn btn-lg btn-outline-danger btn-inline-block " :class= "{'active' : (AuthUnauth =='unauthorize')}" style="font-size:26px;margin-top:10px" v-on:click="AuthUnauth = 'unauthorize'">
+        Unauthorize 
+        </button>
     </div>
-     <h5 v-if="!LimitAmount.currency" style="margin:20px;color:lightskyblue">
-            Enter 3 Character currency code. Use ALL CAPS unless instructed not to. Although it is possible to use currencies codes on XRPL that are longer than 3 characters,
-            it is assumed if you know how to use these you wouldn't be using this tool.
-    </h5>
-    <div v-if="LimitAmount.currency" class="container"> 
+
+    <div v-if="AuthUnauth" class="container"> 
             <h4 style="margin:20px">
-              Enter the ISSUER of the <span class="buttercup" > {{LimitAmount.currency}} </span> you want to extend Trust to:  
+              Enter the account you want to <span :class="{'text-success' : (AuthUnauth =='authorize'), 'text-danger' : (AuthUnauth =='unauthorize')}" > {{ AuthUnauth }} </span> for deposits:  
             </h4>
         <div class="col-boom">
-        	            <input v-model="LimitAmount.issuer" type="text" class="effect-2 no-border" placeholder="r****************************" @blur="issuerCheck()">
+        	            <input v-model="acct" type="text" class="effect-2 no-border" placeholder="r****************************" @blur="acctCheck()">
 
             <span class="focus-border"></span>
         </div>
-        <h5 v-if="!LimitIssuerValid" style="margin:20px;color:lightskyblue">
+        
+        <h5 v-if="!acctValid" style="margin:20px;color:lightskyblue">
             If you see this message, the issuer account is currently invalid. Please review and make sure the account begins with a lowercase letter
             "r", does not contain: capital letters "O" or "I", the lowercase letter "l" or the number "0" and is between 25 and 35 characters in length. 
         </h5>
-        <div v-if="!LimitIssuerValid && !qrModeIssuer" style="margin-top:50px; margin-bottom:50px;">  
+        <div v-if="!acctValid && !qrModeAcct" style="margin-top:50px; margin-bottom:50px;">  
                 <div style="margin-bottom:40px">or</div>
-                <button @click="qrModeIssuer=true" class="btn btn-outline-primary" type="button"><i class="fa fa-qrcode fa-5x" style="color:white;"></i></button>
+                <button @click="qrModeAcct=true" class="btn btn-outline-primary" type="button"><i class="fa fa-qrcode fa-5x" style="color:white;"></i></button>
                 <div style="font-size:20px;">Scan QR Code</div>
                 <h5 style="margin:20px;color:lightskyblue">Tip: Use your phone to look up the account on Bithomp, the QR Code will be displayed for easy scanning</h5>
             </div>
-        <div v-if= "qrModeIssuer">
-            <qrcodeReader @decode="onQrDecodeIssuer"> </qrcodeReader>
-            <button type="button" class="btn btn-outline-primary" style="color:white; margin-top:10px" v-on:click ="cancelIssuerQr()">
+        <div v-if= "qrModeAcct">
+            <qrcodeReader @decode="onQrDecodeAcct"> </qrcodeReader>
+            <button type="button" class="btn btn-outline-primary" style="color:white; margin-top:10px" v-on:click ="cancelAcctQr()">
             Cancel
             </button>
         </div>
         </div>
-        <div v-if="LimitIssuerValid">
-        <h4 style="margin:20px">
-            Enter the maximum amount of <span class="buttercup">{{LimitAmount.currency}} </span> you are willing to hold:
-            </h4>
-    <div class="col-boom">
-        	<input v-model="LimitAmount.value" type="number" style="width:100%" class="effect-2 no-border" maxlength=16 placeholder="1000000">
-            <span class="focus-border"></span>
-        </div>
-        <h5 v-if="!LimitAmount.value" style="margin:20px;color:lightskyblue">
-        Since a large, reputable financial institution is more likely to be able to pay you back than, say, your broke roommate, you can set different limits on each trust line, 
-        to indicate the maximum amount you are willing to let the issuer "owe" you in the XRP Ledger. 
-        </h5>
-        </div>
+    
+
         
-        <div v-if="LimitAmount.value">
-         <button type="button" @click="RegKeyTag('enterSequence')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
+        <div v-if="acctValid">
+         <button type="button" @click="PreAuthTag('enterSequence')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
         </div>
     </div>
     <!-- Enter Sequence -->
-    <div v-if="regKeyTag =='enterSequence'">
+    <div v-if="preAuthTag =='enterSequence'">
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="RegKeyTag()" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="PreAuthTag()" >Back</button> 
         </div>
         
         <h4>Enter the Next Sequence Number for the Initiating Account:</h4>
@@ -75,15 +70,15 @@
         <h5><img src="../../static/img/nextsequence.png" width="250" height="400" alt="Mountain View"></h5>
 
             <div  v-if="Sequence" >
-            <button type="button" @click="RegKeyTag('enterFee')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
+            <button type="button" @click="PreAuthTag('enterFee')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
             </div>
     </div> 
     <!-- end Enter Sequence -->
 
          <!-- Enter Fee -->
-    <div v-if="regKeyTag =='enterFee'">
+    <div v-if="preAuthTag =='enterFee'">
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="RegKeyTag('enterSequence')" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="PreAuthTag('enterSequence')" >Back</button> 
         </div>
         <h4>Enter the fee you want to pay for this transaction:</h4>
         <div class="col-boom">
@@ -95,10 +90,9 @@
             Hint: The minimum fee currently allowed is 10 drops (0.000010 XRP). If the XRPL is busy, a transaction with a low fee might not be processed in a timely manner.  
         </h5>
         <h5 style="margin:20px;color:lightskyblue">
-            Fee currently set to: <span class="buttercup"> {{ feeXRP }} </span> XRP
+            Fee currently set to: <span class="buttercup"> {{ FeeXRP }} </span> XRP
         </h5>
         </div>
-
         <div v-if="multiSignSetup">
         <h4 style="margin:20px;" class="neonRed">
             Since this is a Multi-Sign Transaction the fee will be multiplied by the <span class="buttercup"> Number of signers +1</span>  
@@ -109,15 +103,15 @@
         </div>
 
             <div  v-if="fee" >
-            <button type="button" @click="RegKeyTag('ReviewTx'),prepTx()" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
+            <button type="button" @click="PreAuthTag('ReviewTx'),prepTx()" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
             </div>
     </div> 
     <!-- end Enter Fee -->
 
     <!-- Review Tx -->
-    <div v-if="regKeyTag =='ReviewTx'">
+    <div v-if="preAuthTag =='ReviewTx'">
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="RegKeyTag('enterFee')" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="PreAuthTag('enterFee')" >Back</button> 
         </div>
         <h4 class="buttercup" style="margin:20px"><u> Please review your transaction information:</u></h4>
         
@@ -131,16 +125,12 @@
                 </div>
             </div>
         </div>
-        <div v-if="!multiSignSetup">
+        <div v-if="!multiSignSetup"> 
         <h5 style="margin:20px;color:lightskyblue">
             After verifying the information above is correct, you can sign the transaction. 
             The next screen will provide you with the transaction blob, which you can submit on an online computer.
         </h5>
-
-        
-
-            
-            <button type="button" class="btn btn-lg btn-outline-success" style="margin:20px;color:white;font-size:30px" @click="signTx(), RegKeyTag('signedTx')" >Sign Transaction</button>
+            <button type="button" class="btn btn-lg btn-outline-success" style="margin:20px;color:white;font-size:30px" @click="signTx(), PreAuthTag('signedTx')" >Sign Transaction</button>
             </div>
         <div v-if="multiSignSetup">
         <h5 style="margin:20px;color:lightskyblue">
@@ -155,9 +145,9 @@
     <!-- end Review Tx -->
 
     <!-- Signed Tx -->
-    <div v-if="regKeyTag =='signedTx'">
+    <div v-if="preAuthTag =='signedTx'">
         <div style="text-align:left; margin-bottom:0px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="prepTx(),RegKeyTag('ReviewTx')" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="prepTx(),PreAuthTag('ReviewTx')" >Back</button> 
         </div>
         <h4 class="buttercup" style=""> Here is the Signed Transaction:</h4>
 
@@ -195,7 +185,7 @@ import { EventBus } from "./eventbus.js";
 
 
 export default {
-  name: "TrustSet",
+  name: "DepPreAuth",
 
   components: {
     VueQrcode,Modalbtn,QrcodeReader,
@@ -209,15 +199,11 @@ export default {
       signedTx:null,
       Transaction:{},
       txblob:false,
-      LimitAmount: {
-        currency: null,
-        issuer: null,
-        value: null,
-        },
-      LimitIssuerValid:false,
-      qrModeIssuer: false,
-      
-      regKeyTag:null,
+      qrModeAcct: false,
+      AuthUnauth:null,
+      acct:null,
+      acctValid:false,
+      preAuthTag:null,
       feeXRP:null,
       
     };
@@ -228,8 +214,8 @@ export default {
 
 
 
-    RegKeyTag: function(regKeyTag){
-        this.regKeyTag = regKeyTag;
+    PreAuthTag: function(preAuthTag){
+        this.preAuthTag = preAuthTag;
     },
 
     prepTx(){
@@ -239,12 +225,22 @@ export default {
       this.signedTx.tx_blob = null
       }
     this.Transaction = {
-              TransactionType: 'TrustSet',
+              TransactionType: 'DepositPreauth',
               Account: this.walletAddress,
               Fee: this.fee,
               Sequence: this.Sequence *1,
-              LimitAmount: this.LimitAmount,
             };
+    if(this.AuthUnauth =="authorize"){
+        this.Transaction.Authorize = this.acct
+        if(this.Transaction.Unauthorize){
+        delete this.Transaction.Unauthorize}
+    }
+    else if(this.AuthUnauth =="unauthorize"){
+        this.Transaction.Unauthorize = this.acct
+        if(this.Transaction.Authorize){
+            delete this.Transaction.Authorize
+        }
+    }
     if (this.multiSignSetup) {
         this.Transaction.Fee =
           Number(this.fee) * (Number(this.signerCount) + 1);
@@ -265,30 +261,28 @@ export default {
           alert('There was an error when signing, see console log')
       })
     },
-    issuerCheck() {
-        this.LimitAmount.issuer = this.LimitAmount.issuer.trim();
-      var string = this.LimitAmount.issuer
+    acctCheck() {
+        this.acct = this.acct.trim();
+      var string = this.acct
       if (string.match(/^r[a-k+m-z+A-H+J-N+P-Z0-9]{25,}/) && string.length >= 25 && string.length <= 35) {
-        this.LimitIssuerValid = true
+        this.acctValid = true
       }
-      else(this.LimitIssuerValid = false)
+      else(this.acctValid = false)
     },
 
-    onQrDecodeIssuer: function (decodedString) {
+    onQrDecodeAcct: function (decodedString) {
       console.log(decodedString);
-      this.LimitAmount.issuer = decodedString;
-      this.qrModeIssuer = false;
-      this.issuerCheck();
+      this.acct = decodedString;
+      this.qrModeAcct = false;
+      this.acctCheck();
     },
 
-    cancelIssuerQr(){
-      this.qrModeIssuer = false;
+    cancelAcctQr(){
+      this.qrModeAcct = false;
     },
-
     sendForSigning() {
       EventBus.$emit("addSigTx", this.Transaction);
-    }
-    
+    },
 
     
   },
