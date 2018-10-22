@@ -1,77 +1,98 @@
 <template>
   <div class="container">
     
+    
+    <!--Set Escrow Owner-->
     <div v-if="!regKeyTag">
-    <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+        <div style="text-align:left; margin-bottom:40px"> <!--back button -->
             <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="$parent.txType=null" >Back</button> 
         </div>
-    <h4>Do you want to set the Regular Key or disable an exsisting Regular Key? </h4>
-    <button type="button" class="btn btn-lg btn-outline-success btn-block" style="font-size:26px;" v-on:click="RegKeyTag('SET')">
-        Set Regular Key
-    </button>
-    <button type="button" class="btn btn-lg btn-outline-danger btn-block" style="font-size:26px;" v-on:click="RegKeyTag('DISABLE')">
-        Disable Regular Key
-    </button>
-    <h5 style="margin:20px;color:lightskyblue">
-        If you want to set a Regular Key for the first time or change the exsisting Regular Key to a different account, choose 
-        <span class="text-success"> Set Regular Key </span>    
-    </h5>
-    </div>
-
-    <!--confirm disable regular key-->
-    <div v-if="regKeyTag =='DISABLE'">
-        <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="regKeyTag=null" >Back</button> 
-        </div>
-        <h4 class="text-danger" style="margin:20px">WARNING: Please make sure you know what your Master Key is before submitting this transaction. THERE IS NO TURNING BACK! </h4>
-        <h5 style="margin:20px">If you try to disable the Regular Key with the Master Key disabled and do not have a Signer List set, the transaction will fail. </h5>
-        <h4>Are you sure you want to disable the Regular Key for account: <span class="lightskyblue">{{walletAddress}}</span>? </h4>
-        <button type="button" class="btn btn-lg btn-outline-success" style="font-size:26px; margin:20px" v-on:click="regularKey=null, RegKeyTag('enterSequence')">
-        Yes
-        </button>
-    </div>
-    <!--End confirm disable regular key-->
-
-    <!--Set regular key Acct-->
-    <div v-if="regKeyTag =='SET'">
-        <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="regKeyTag=null" >Back</button> 
-        </div>
-        <h4 style="margin:20px">Enter the account you want to set as the Regular Key for account: <span class="lightskyblue">{{walletAddress}}</span></h4>
+        <h4 style="margin:20px">Enter the Owner Account for the Escrow to be finished:</h4>
         <hr class="bglightskyblue" style="width:75%; height:0px;  border:none;margin-bottom:60px" />
         <div class="col-boom1">
-        	<input class="effect-2 no-border" type="text" placeholder="r*****************************"  v-model="regularKey" @blur="regularKeyCheck()">
+        	<input class="effect-2 no-border" type="text" placeholder="r*****************************"  v-model="owner" @blur="ownerCheck()">
             <span class="focus-border"></span>
         </div>
-        <h5 v-if="!regularKeyValid" style="margin:20px;color:lightskyblue">
+        <h5 v-if="!ownerValid" style="margin:20px;color:lightskyblue">
             If you see this message, the Regular Key account is currently invalid. Please review and make sure the account begins with a lowercase letter
             "r", does not contain: capital letters "O" or "I", the lowercase letter "l" or the number "0" and is between 25 and 35 characters in length. 
         </h5>
-            <div  v-if="regularKeyValid" >
-            <button type="button" @click="RegKeyTag('enterSequence')" class="btn btn-outline-primary btn-lg" style="color:white">NEXT</button>
+            <div  v-if="ownerValid" >
+            <button type="button" @click="RegKeyTag('enterOfferSequence')" class="btn btn-outline-primary btn-lg" style="color:white">NEXT</button>
             </div>
-            <div v-if="!regularKeyValid && !qrModeRegularKey" style="margin-top:50px; margin-bottom:50px;">  
+            <div v-if="!ownerValid && !qrModeOwner" style="margin-top:50px; margin-bottom:50px;">  
                 <div style="margin-bottom:40px">or</div>
-                <button @click="qrModeRegularKey=true" class="btn btn-outline-primary" type="button"><i class="fa fa-qrcode fa-5x" style="color:white;"></i></button>
+                <button @click="qrModeOwner=true" class="btn btn-outline-primary" type="button"><i class="fa fa-qrcode fa-5x" style="color:white;"></i></button>
                 <div style="font-size:20px;">Scan QR Code</div>
                 <h5 style="margin:20px;color:lightskyblue">Tip: Use your phone to look up the account on Bithomp, the QR Code will be displayed for easy scanning</h5>
             </div>
-        <div v-if= "qrModeRegularKey">
-            <qrcodeReader @decode="onQrDecodeRegularKey"> </qrcodeReader>
-            <button type="button" class="btn btn-outline-primary" style="color:white; margin-top:10px" v-on:click ="cancelRegularKeyQr()">
+        <div v-if= "qrModeOwner">
+            <qrcodeReader @decode="onQrDecodeOwner"> </qrcodeReader>
+            <button type="button" class="btn btn-outline-primary" style="color:white; margin-top:10px" v-on:click ="cancelOwnerQr()">
             Cancel
             </button>
         </div>
     </div>
 
+    <!--Set Escrow OfferSequence-->
+    <div v-if="regKeyTag =='enterOfferSequence'">
+        <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="regKeyTag = null" >Back</button> 
+        </div>
+        <h4 style="margin:20px">Enter the Offer Sequence for the Escrow to be finished:</h4>
+        <hr class="bglightskyblue" style="width:75%; height:0px;  border:none;margin-bottom:60px" />
+        <div class="col-boom1">
+        	<input class="effect-2 no-border" type="number" min=0 max=4294967295 placeholder="0"  v-model="offerSequence" >
+            <span class="focus-border"></span>
+        </div>
+        <h5 style="margin:20px" class="buttercup">
+            Enter the transaction sequence number of EscrowCreate transaction that created the Escrow you want to finish
+            
+        </h5>
+        
+            <div  v-if="offerSequence" >
+            <button type="button" @click="RegKeyTag('enterMemo')" class="btn btn-outline-primary btn-lg" style="color:white">NEXT</button>
+            </div>
+            
+        
+    </div>
+
+    <!-- Enter Memo -->
+    <div class="container-fluid" v-if="regKeyTag =='enterMemo'">
+        <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="regKeyTag='enterOfferSequence'">Back</button> 
+        </div>
+        <h4>Do you want to enter a Memo?</h4>
+        <button type="button" class="btn btn-lg btn-outline-success btn-block" :class= "{'active' : (memoTag =='yes')}" style="font-size:26px;" v-on:click="MemoTag('yes')">
+          YES
+        </button>
+      <button type="button" class="btn btn-lg btn-outline-danger btn-block" :class= "{'active' : (memoTag =='no')}" style="font-size:26px;" v-on:click="MemoTag('no')">
+          NO
+        </button>
+        <div v-if="memoTag =='yes'" class="col-boom">
+        	<input class="effect-2 no-border" type="text" placeholder="Enter Memo Here"  v-model="memo">
+            <span class="focus-border"></span>
+        </div>
+        
+
+        <h5 style="margin:20px;color:lightskyblue">
+            
+        </h5>
+
+        <div v-if="memoTag =='no' || memo" >
+            <button type="button" @click="RegKeyTag('enterSequence')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
+            </div>
+    
+
+    </div>
+    <!--end Enter Memo -->
+
     <!-- Enter Sequence -->
     <div v-if="regKeyTag =='enterSequence'">
-        <div v-if="regularKey" style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="RegKeyTag('SET')" >Back</button> 
+        <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="RegKeyTag('enterMemo')" >Back</button> 
         </div>
-        <div v-if="!regularKey" style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="RegKeyTag('DISABLE')" >Back</button> 
-        </div>
+        
         <h4>Enter the Next Sequence Number for the Initiating Account:</h4>
         <div class="col-boom">
         	<input class="effect-2 no-border" type="number" placeholder="0"  min=1 step=1 v-model="Sequence">
@@ -138,9 +159,7 @@
                 </div>
             </div>
         </div>
-        <h5 v-if="!Transaction.RegularKey" class="buttercup">
-            The Regular Key is being removed so there is no RegularKey field
-        </h5>
+        
         <div v-if="!multiSignSetup">  
         <h5 style="margin:20px;color:lightskyblue">
             After verifying the information above is correct, you can sign the transaction. 
@@ -216,9 +235,10 @@ export default {
       Transaction:{},
       txblob:false,
       memoTag:null,
-      regularKey:null,
-      regularKeyValid:false,
-      qrModeRegularKey: false,
+      owner:null,
+      ownerValid:false,
+      offerSequence:null,
+      qrModeOwner: false,
       regKeyTag:null,
       feeXRP:null,
       
@@ -243,22 +263,32 @@ export default {
       this.signedTx.tx_blob = null
       }
     this.Transaction = {
-              TransactionType: 'SetRegularKey',
+              TransactionType: 'EscrowFinish',
               Account: this.walletAddress,
-              Fee: this.fee,
+              Fee: this.fee.toString(),
               Sequence: this.Sequence *1,
+              Owner: this.owner,
+              OfferSequence: this.offerSequence,
             };
-    try {
-        if(this.regularKey){
-        this.Transaction.RegularKey = this.regularKey};
-        }
-    catch(err){
-        console.log('no regular key set')
-      }
-      if (this.multiSignSetup) {
+    
+    if (this.multiSignSetup) {
         this.Transaction.Fee =
-          Number(this.fee) * (Number(this.signerCount) + 1);
+          (Number(this.fee) * (Number(this.signerCount) + 1)).toString();
         this.Transaction.SigningPubKey = "";
+      }
+    
+    if (this.memo) {
+        this.Transaction.Memos = [
+          {
+            Memo: {
+              MemoData: Buffer.from(this.memo, "utf8")
+                .toString("hex")
+                .toUpperCase()
+            }
+          }
+        ];
+      } else if (this.Transaction.Memos) {
+        delete Transaction.Memos;
       }
     
     },
@@ -274,26 +304,30 @@ export default {
           alert('There was an error when signing, see console log')
       })
     },
-    onQrDecodeRegularKey: function (decodedString) {
+    onQrDecodeOwner: function (decodedString) {
       console.log(decodedString);
-      this.regularKey = decodedString;
-      this.qrModeRegularKey = false;
-      this.regularKeyCheck();
+      this.owner = decodedString;
+      this.qrModeOwner = false;
+      this.ownerCheck();
     },
 
-    regularKeyCheck() {
-        if(this.regularKey){
-        this.regularKey = this.regularKey.trim();
-        var string = this.regularKey
+    ownerCheck() {
+        if(this.owner){
+        this.owner = this.owner.trim();
+        var string = this.owner
         if (string.match(/^r[a-k+m-z+A-H+J-N+P-Z0-9]{25,}/) && string.length >= 25 && string.length <= 35) {
-            this.regularKeyValid = true
+            this.ownerValid = true
         }
-        else {this.regularKeyValid = false}
+        else(this.ownerValid = false)
         }
         },
 
-    cancelRegularKeyQr(){
-      this.qrModeRegularKey = false;
+    cancelOwnerQr(){
+      this.qrModeOwner = false;
+    },
+
+    MemoTag: function(memoTag) {
+      this.memoTag = memoTag;
     },
 
     sendForSigning() {

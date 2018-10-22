@@ -2,25 +2,31 @@
   <div class="container">
 
 
-  <!-- Payment -->
+  <!-- EscrowCreate -->
   <div class="container"> 
       
       <!-- Enter Destination -->
-    <div v-if="!paymentStep">
+    <div v-if="!escrowStep">
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
             <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="$parent.txType=null" >Back</button> 
         </div>
         <h4>Enter the Destination Account</h4>
+        <h5 class="lightskyblue" style="margin:20px">This is the account the escrowed amount will be delivered to upon completion</h5>
+        <div v-if="!qrModeDest">
         <div class="col-boom1">
         	<input class="effect-2 no-border" type="text" placeholder="r*****************************"  v-model="destination.Account" @blur="destinationCheck()">
             <span class="focus-border"></span>
         </div>
+        <button v-if="!useOriginating" type="button" class="btn btn-outline-primary" style="font-size:20px;margin:20px" v-on:click="destination.Account = walletAddress, destinationCheck()">
+        Deliver Back to Originating Account
+    </button>
         <h5 v-if="!destination.Valid" style="margin:20px;color:lightskyblue">
             If you see this message, the destination account is currently invalid. Please review and make sure the account begins with a lowercase letter
             "r", does not contain: capital letters "O" or "I", the lowercase letter "l" or the number "0" and is between 25 and 35 characters in length. 
         </h5>
+    </div>
             <div  v-if="destination.Valid" >
-            <button type="button" @click="pymtStep('destinationTag')" class="btn btn-outline-primary btn-lg" style="color:white">NEXT</button>
+            <button type="button" @click="EscrowStep('destinationTag')" class="btn btn-outline-primary btn-lg" style="color:white">NEXT</button>
             </div>
             <div v-if="!destination.Valid && !qrModeDest" style="margin-top:10px; margin-bottom:10px;">  
                 <div style="margin-bottom:10px">or</div>
@@ -38,9 +44,9 @@
     <!-- end Enter Destination -->
 
     <!-- Enter Destination Tag -->
-    <div v-if="paymentStep =='destinationTag'" class="container">
+    <div v-if="escrowStep =='destinationTag'" class="container">
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep=null" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="escrowStep=null" >Back</button> 
         </div>
         <h4> Do you have a Destination tag to enter? </h4> 
         <button type="button" class="btn btn-lg btn-outline-success btn-block" :class= "{'active' : (destTag =='yes')}" style="font-size:26px;" v-on:click="dTag('yes')">
@@ -61,156 +67,77 @@
         </h5>
 
         <div v-if="destTag =='no' || destination.Tag" >
-            <button type="button" @click="pymtStep('currencyType')" class="btn btn-outline-primary btn-lg" style="color:white;margin-top:5px">NEXT</button>
+            <button type="button" @click="EscrowStep('enterAmount')" class="btn btn-outline-primary btn-lg" style="color:white;margin-top:5px">NEXT</button>
             </div>
     </div>
     <!-- end Enter Destination Tag -->
 
-    <!-- Enter Currency Type -->
-    <div v-if="paymentStep =='currencyType'" class="container">
-        <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep='destinationTag'" >Back</button> 
-        </div>
-        <h4> Are you sending <span class="lightskyblue" > XRP </span> or an other currency? </h4>
-        <button type="button" class="btn btn-lg btn-outline-primary btn-block" :class= "{'active' : (curXrp =='XRP')}" style="font-size:26px;" v-on:click="curType('XRP')">
-           XRP 
-        </button>
-      <button type="button" class="btn btn-lg btn-outline-primary btn-block" :class= "{'active' : (curXrp =='OTH')}" style="font-size:26px;" v-on:click="curType('OTH')">
-           Other 
-        </button>
+    
 
-    <!-- Enter Other Currency Info -->
-        <div v-if="curXrp =='OTH'" class="container">
-            <h4 style="margin:20px">
-              Enter the CURRENCY CODE you want to send:  
-            </h4>
-        <div class="col-boom">
-        	<input v-model="currencyAmount.currency" type="text" class="form-control" maxlength="3" minlength="3" placeholder="ex: USD / BTC / etc">
-            <span class="focus-border"></span>
+    <!-- Enter Escrow Amount -->
+    <div class="container" v-if="escrowStep =='enterAmount'">
+        <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="escrowStep='destinationTag'" >Back</button> 
         </div>
+        <h4>Enter how much XRP do you want to Escrow?</h4>
         
-
-        <h5 v-if="!currencyAmount.currency" style="margin:20px;color:lightskyblue">
-            Enter 3 Character currency code. Use ALL CAPS unless instructed not to. Although it is possible to use currencies codes on XRPL that are longer than 3 characters,
-            it is assumed if you know how to use these you wouldn't be using this tool.
-        </h5>
-
-        <div v-if="currencyAmount.currency" class="container"> 
-            <h4 style="margin:20px">
-              Enter the ISSUER of the <span class="buttercup" > {{currencyAmount.currency}} </span> you want to send:  
-            </h4>
-        <div class="col-boom1">
-        	            <input v-model="currencyAmount.issuer" type="text" class="effect-2 no-border" placeholder="r****************************" @blur="issuerCheck()">
-
-            <span class="focus-border"></span>
-        </div>
-        <h5 v-if="!currencyAmount.valid" style="margin:20px;color:lightskyblue">
-            If you see this message, the issuer account is currently invalid. Please review and make sure the account begins with a lowercase letter
-            "r", does not contain: capital letters "O" or "I", the lowercase letter "l" or the number "0" and is between 25 and 35 characters in length. 
-        </h5>
-        <div v-if="!currencyAmount.valid && !qrModeIssuer" style="margin-top:0px; margin-bottom:10px;">  
-                <div style="margin-bottom:10px">or</div>
-                <button @click="qrModeIssuer=true" class="btn btn-outline-primary" type="button"><i class="fa fa-qrcode fa-5x" style="color:white;"></i></button>
-                <div style="font-size:20px;">Scan QR Code</div>
-                <h5 style="margin:20px;color:lightskyblue">Tip: Use your phone to look up the account on Bithomp, the QR Code will be displayed for easy scanning</h5>
-            </div>
-        <div v-if= "qrModeIssuer">
-            <qrcodeReader @decode="onQrDecodeIssuer"> </qrcodeReader>
-            <button type="button" class="btn btn-outline-primary" style="color:white; margin-top:10px" v-on:click ="cancelIssuerQr()">
-            Cancel
-            </button>
-        </div>
-        </div> 
-    </div>
-    <!--end Enter Other Currency Info -->
-
-    <div  v-if="( currencyAmount.currency && currencyAmount.valid ) || curXrp == 'XRP'" >
-            <button type="button" @click="pymtStep('enterAmount'),currency2Send()" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
-        </div>
-    </div>
-    <!--end Enter Currency Type -->
-
-    <!-- Enter Payment Amount -->
-    <div class="container" v-if="paymentStep =='enterAmount'">
-        <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep='currencyType', transFee.YN=null " >Back</button> 
-        </div>
-        <h4>Enter how much <span class="buttercup">{{cur2Send}}</span> you want to send</h4>
-        <div v-if="cur2Send =='XRP'">
         <div class="col-boom">
-        	<input v-model="amountToSend" style="width:100%" type="number" class="effect-2 no-border" placeholder="0.000000" step="0.000001" min="0.000001" max="99999999999.999999">
+        	<input v-model="amount" style="width:100%" type="number" class="effect-2 no-border" placeholder="0.000000" step="0.000001" min="0.000001" max="99999999999.999999">
             <span class="focus-border"></span>
         </div>
         <h5 style="margin:20px;color:lightskyblue">
             Enter amount in XRP. Up to 6 decimal places allowed
             </h5>
-        </div>
-        <div v-if="cur2Send !='XRP'">
-        <div class="col-boom">
-        	<input v-model="currencyAmount.value" type="number" rDpsdD9vTwkf1GiNkxunLLDBXsEXG9GNmk class="effect-2 no-border" maxlength=16 placeholder="0.00">
-            <span class="focus-border"></span>
-        </div>
-        <h5 v-if="!currencyAmount.value" style="margin:20px;color:lightskyblue">
-            Enter amount in <span class="buttercup">{{cur2Send}}</span>. Non-XRP currency values allow for up to 16 significant digits.
-            </h5>
-        <div v-if="(destination.Account != currencyAmount.issuer && walletAddress != currencyAmount.issuer ) && currencyAmount.value">
-        <h5 v-if="!transFee.YN" style="margin:20px;color:lightskyblue">
-            **If the issuer set a transfer fee for their issuances and you are not sending directly back to the issuer, your payment will fail without further information, **
-            </h5>
-        <div>
-        <h4> Does the issuer have a transfer fee setup?</h4>
-            <button type="button" class="btn btn-lg btn-outline-success btn-inline-block " :class= "{'active' : (transFee.YN =='yes')}" style="font-size:20px;margin:10px" v-on:click="transFee.YN = 'yes'">
-            Yes
-            </button>
-            <button type="button" class="btn btn-lg btn-outline-danger btn-inline-block " :class= "{'active' : (transFee.YN =='no')}" style="font-size:20px;margin:10px" v-on:click="transFee.YN = 'no'">
-            No
-            </button>
-        </div>
-        <h5 v-if="!transFee.YN" style="margin:20px;color:lightskyblue"> *Hint: You can see if a transfer fee has been set by using Bithomp's XRP explorer (https://bithomp.com/explorer/) </h5>
-        <h5 v-if="!transFee.YN"> <img src="../../static/img/transferFee.png" width="250" height="350" alt="Mountain View"></h5>
-        <div v-if="transFee.YN =='yes'">
-        <div>
-        <h4> What is the transfer fee?</h4>
-        <h5 v-if="!transFee.input" class="lightskyblue"> Choose to enter as basis points or percentage</h5>
-        <div class="row">
-        <div class="col-sm-4"></div>
-        <div class="input-group mb-3 col-sm-4">
-        <div class="input-group-prepend">
-            <button class="btn btn-outline-primary" type="button" :class= "{'active' : (transFee.input =='bps')}" @click="transFee.input='bps', transFee.percentage=null">bps</button>
-            <button class="btn btn-outline-primary" type="button" :class= "{'active' : (transFee.input =='percent')}" @click="transFee.input='percent', transFee.bps=null">%</button>
-        </div>
-        <input v-if="transFee.input == 'bps'" v-model="transFee.bps" type="number" min=1 max=10000 class="form-control" @keyup="bpsCheck()">
-        <div v-if="transFee.input == 'bps'" class="inline lightskyblue" style="margin-left: 20px; font-size:20px">( {{transFee.bps /100 }} % ) </div>
-        <input v-if="transFee.input == 'percent'" v-model="transFee.percentage" min=1 max=100 type="number" class="form-control" @keyup="percentCheck()">
-        <div v-if="transFee.input == 'percent'" class="inline lightskyblue" style="margin-left: 20px; font-size:20px">( {{transFee.percentage *100}} bps ) </div>
-        </div>
-        <div class="col-sm-4"></div>
-        </div>
-        <div v-if="transFee.bps || transFee.percentage">
-        <h4>
-            After transfer fees the destination will receive <span class="lightskyblue"> {{ calcDeliver }} </span> <span class="buttercup"> {{ cur2Send }} </span>. 
-        </h4>
-        <button type="button" class="btn btn-lg btn-outline-success btn-block" :class= "{'active' : (partialPymt)}" style="font-size:26px;margin:10px" v-on:click="partialPymt = !partialPymt, sendMaxCreate()">
-            I Understand
-            </button>
-        </div>
-
-            
-        </div>
-        </div>
-        </div>
-        </div>
-        <div v-if="(currencyAmount.value && transFee.YN =='no') ||(destination.Account == currencyAmount.issuer || walletAddress == currencyAmount.issuer ) && currencyAmount.value ||(currencyAmount.value && transFee.YN =='yes' && (sendMax.valid || sendMin.valid || partialPymt)) || amountToSend">
-         <button type="button" @click="pymtStep('enterMemo')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
+        
+        <div v-if="amount">
+         <button type="button" @click="EscrowStep('enterTime')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
         </div>
 
     </div>
-    <!--end Enter Payment Amount -->
+    <!--end Enter Escrow Amount -->
+
+    <!-- Enter Escrow Time -->
+    <div class="container" v-if="escrowStep =='enterTime'">
+        <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="escrowStep='enterAmount'" >Back</button> 
+        </div>
+        <h4>When do you want this Escrow to be unlocked?</h4>
+        <div style="text-align:center;margin: 0 auto;width:400px"><flat-pickr placeholder="Select date and time"  :config="config" v-model="FinishAfter"></flat-pickr></div>
+        <!--div class="col-boom">
+        	<input v-model="FinishAfter" style="width:100%" type="datetime-local" class="effect-2 no-border" placeholder="0.000000" step="0.000001" min="0.000001" max="99999999999.999999">
+            <span class="focus-border"></span>
+        </div -->
+        <h5 style="margin:20px" class="buttercup">
+            Please make sure your system's time zone is set correctly, even if the time itself is not accurate. If the time zone is not correct, fix it then refresh the browswer to ensure the correct settings have been loaded. 
+            </h5>
+        <h5 style="margin:20px;color:lightskyblue">
+            There is an assumption being made that your system is set to the correct time-zone. 
+            The time you enter is assumed to be your systems local time.
+            Local time then converted to <span class="text-success"> Unix Epoch Time </span> and finally converted to <span class="text-success"> Ripple Epoch Time </span>  (which is equal to Unix Epoch Time - 946684800 seconds).
+            </h5>
+        <h5 style="margin:20px;color:lightskyblue">
+            If you attempt to submit an Escrow Create Transaction with a Finish date that has already past, it will fail with an error code of <span class="text-danger">tecNO_PERMISSION</span>
+            </h5>
+        <h5 style="margin:20px" class="buttercup">
+            Note: The escrow release requires you to submit an Escrow Finish transaction, it is NOT automatic.
+            </h5>
+        <div v-if="FinishAfter">
+        <h2 class="text-primary"><i class="fas fa-unlock"></i> UNLOCK DATE: </h2>    
+        <h1>{{escrowsdate}}</h1>
+        <h3>Ripple Epoch Time: {{calcRippleTime}}</h3>
+        </div>
+        
+        <div v-if="FinishAfter">
+         <button type="button" @click="EscrowStep('enterMemo')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
+        </div>
+
+    </div>
+    <!--end Enter Escrow Time -->
 
     <!-- Enter Memo -->
-    <div class="container-fluid" v-if="paymentStep =='enterMemo'">
+    <div class="container-fluid" v-if="escrowStep =='enterMemo'">
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep='enterAmount', partialPymt = false, sendMax.valid = false, sendMin.valid=false" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="escrowStep='enterTime'" >Back</button> 
         </div>
         <h4>Do you want to enter a Memo?</h4>
         <button type="button" class="btn btn-lg btn-outline-success btn-block" :class= "{'active' : (memoTag =='yes')}" style="font-size:26px;" v-on:click="MemoTag('yes')">
@@ -230,7 +157,7 @@
         </h5>
 
         <div v-if="memoTag =='no' || memo" >
-            <button type="button" @click="pymtStep('enterSequence')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
+            <button type="button" @click="EscrowStep('enterSequence')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
             </div>
     
 
@@ -238,9 +165,9 @@
     <!--end Enter Memo -->
 
      <!-- Enter Sequence -->
-    <div v-if="paymentStep =='enterSequence'">
+    <div v-if="escrowStep =='enterSequence'">
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep='enterMemo'" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="escrowStep='enterMemo'" >Back</button> 
         </div>
         <h4>Enter the Next Sequence Number for the Initiating Account:</h4>
         <div class="col-boom">
@@ -253,15 +180,15 @@
         <h5><img src="../../static/img/nextsequence.png" width="250" height="400" alt="Mountain View"></h5>
 
             <div  v-if="Sequence" >
-            <button type="button" @click="pymtStep('enterFee')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
+            <button type="button" @click="EscrowStep('enterFee')" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
             </div>
     </div> 
     <!-- end Enter Sequence -->
 
          <!-- Enter Fee -->
-    <div v-if="paymentStep =='enterFee'">
+    <div v-if="escrowStep =='enterFee'">
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep='enterSequence'" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="escrowStep='enterSequence'" >Back</button> 
         </div>
         <h4>Enter the fee you want to pay for this transaction:</h4>
         <div class="col-boom">
@@ -287,16 +214,16 @@
         </div>
 
             <div  v-if="fee" >
-            <button type="button" @click="pymtStep('ReviewPayment'),prepPymt()" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
+            <button type="button" @click="EscrowStep('ReviewPayment'),prepPymt()" class="btn btn-outline-primary btn-lg" style="color:white;margin:20px">NEXT</button>
             </div>
     </div> 
     <!-- end Enter Fee -->
 
      <!-- Review Payment -->
-    <div v-if="paymentStep =='ReviewPayment'">
+    <div v-if="escrowStep =='ReviewPayment'">
       
         <div style="text-align:left; margin-bottom:40px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="paymentStep='enterFee'" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="escrowStep='enterFee'" >Back</button> 
         </div>
         
         <h4 class="buttercup" style="margin:20px"><u> Please review your payment information:</u></h4>
@@ -321,7 +248,7 @@
         
 
             
-            <button type="button" class="btn btn-lg btn-outline-success" style="margin:20px;color:white;font-size:30px" @click="signTx(), pymtStep('signedTx')" >Sign Transaction</button>
+            <button type="button" class="btn btn-lg btn-outline-success" style="margin:20px;color:white;font-size:30px" @click="signTx(), EscrowStep('signedTx')" >Sign Transaction</button>
             </div>
     <div v-if="multiSignSetup">
         <h5 style="margin:20px;color:lightskyblue">
@@ -340,9 +267,9 @@
     <!-- end Review Payment -->
 
     <!-- Signed Tx -->
-    <div v-if="paymentStep =='signedTx'">
+    <div v-if="escrowStep =='signedTx'">
         <div style="text-align:left; margin-bottom:0px"> <!--back button -->
-            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="prepPymt(),paymentStep='ReviewPayment'" >Back</button> 
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="prepPymt(),escrowStep='ReviewPayment'" >Back</button> 
         </div>
         <h4 class="buttercup" style=""> Here is the Signed Transaction:</h4>
 
@@ -382,45 +309,34 @@ import VueQrcode from "@xkeshi/vue-qrcode";
 import Modalbtn from "./modalBtn";
 import { QrcodeReader } from "vue-qrcode-reader";
 import binary from "ripple-binary-codec";
+import flatPickr from 'vue-flatpickr-component';
+import 'flatpickr/dist/flatpickr.css';
+
+
 
 export default {
-  name: "CreateTxs",
+  name: "CreateEscrow",
 
   components: {
     VueQrcode,
     Modalbtn,
-    QrcodeReader
+    QrcodeReader,flatPickr,
   },
   props: ["walletAddress", "secret", "signerCount", "multiSignSetup"],
   data() {
     return {
-      amountToSend: null,
-      currencyAmount: {
-        currency: null,
-        issuer: null,
-        value: null,
-        valid: false
-      },
-      transFee: {
-        YN: null,
-        bps: null,
-        percentage: null,
-        input: null
-      },
-      partialPymt: false,
-      sendMax: {
-        valid: false,
-        currency: null,
-        issuer: null,
-        value: null
-      },
-      sendMin: {
-        valid: false,
-        currency: null,
-        issuer: null,
-        value: null
-      },
-      curXrp: null,
+      amount: null,
+      FinishAfter:null,
+      config: {
+         // wrap: true, // set wrap to true only when using 'input-group'
+          dateFormat: 'U',      
+          enableTime:true,
+          altInput: true,
+          altFormat: 'F	j, Y \\ @ \\ h \\:\\ i K'
+
+        },                
+      HumanTime:null,
+      rippleTime:null,
       destination: {
         Account: null,
         Valid: false,
@@ -430,17 +346,16 @@ export default {
       memo: null,
       memoHex: null,
       qrModeDest: false,
-      qrModeIssuer: false,
       Sequence: null,
       signedTx: null,
       Transaction: {},
       txblob: false,
       txType: null,
-      paymentStep: null,
+      escrowStep: null,
       destTag: null,
-      cur2Send: null,
       memoTag: null,
-      feeXRP: null
+      feeXRP: null,
+
     };
   },
   mounted() {},
@@ -450,8 +365,8 @@ export default {
       this.txType = txType;
     },
 
-    pymtStep: function(paymentStep) {
-      this.paymentStep = paymentStep;
+    EscrowStep: function(escrowStep) {
+      this.escrowStep = escrowStep;
     },
 
     dTag: function(destTag) {
@@ -472,32 +387,14 @@ export default {
         this.signedTx.tx_blob = null;
       }
       this.Transaction = {
-        TransactionType: "Payment",
+        TransactionType: "EscrowCreate",
         Account: this.walletAddress,
+        Amount: (this.amount * 1000000).toString(), // Amount in drops, so multiply (6 decimal positions)
+        FinishAfter: this.rippleTime,
         Fee: this.fee.toString(),
         Destination: this.destination.Account,
         Sequence: this.Sequence * 1
       };
-      if (this.cur2Send == "XRP") {
-        this.Transaction.Amount = (this.amountToSend * 1000000).toString(); // Amount in drops, so multiply (6 decimal positions)
-      } else {
-        this.Transaction.Amount = {
-          currency: this.currencyAmount.currency,
-          value: this.currencyAmount.value,
-          issuer: this.currencyAmount.issuer
-        };
-        if (this.partialPymt) {
-          this.Transaction.Flags = 131072; // tfFullyCanonicalSig 2147483648 +tfPartialPayment 131072
-          //        if(this.sendMax.valid){
-          //           this.Transaction.SendMax = {
-          //                currency: this.currencyAmount.currency,
-          //                value: this.currencyAmount.value,
-          //                issuer: this.currencyAmount.issuer,
-          //        };
-          //    }
-        }
-      }
-
       if (this.destination.Tag) {
         this.Transaction.DestinationTag = this.destination.Tag * 1;
       } else if (this.Transaction.DestinationTag) {
@@ -541,6 +438,21 @@ export default {
         });
     },
 
+    MultisignTx() {
+      this.Transaction.SigningPubKey = "";
+      this.multiSigSecret = [this.secret];
+      new RippledWsClientSign(this.Transaction, this.multiSigSecret)
+        .then(SignedTransaction => {
+          this.signedTx = SignedTransaction;
+
+          console.log("SignedTransaction", SignedTransaction);
+          this.txblob = true;
+        })
+        .catch(SignError => {
+          console.log("SignError", SignError.details);
+          alert("There was an error when signing, see console log");
+        });
+    },
 
     onQrDecodeDestination: function(decodedString) {
       console.log(decodedString);
@@ -572,63 +484,12 @@ export default {
     },
 
 
-    issuerCheck() {
-      if(this.currencyAmount.issuer){
-      this.currencyAmount.issuer = this.currencyAmount.issuer.trim();
-      var string = this.currencyAmount.issuer;
-      if (
-        string.match(/^r[a-k+m-z+A-H+J-N+P-Z0-9]{25,}/) &&
-        string.length >= 25 &&
-        string.length <= 35
-      ) {
-        this.currencyAmount.valid = true;
-      } else {this.currencyAmount.valid = false;}
-      }
-    },
-
-    onQrDecodeIssuer: function(decodedString) {
-      console.log(decodedString);
-      this.currencyAmount.issuer = decodedString;
-      this.qrModeIssuer = false;
-      this.issuerCheck();
-    },
-    currency2Send: function() {
-      if (this.curXrp == "XRP") {
-        this.cur2Send = "XRP";
-      } else {
-        this.cur2Send = this.currencyAmount.currency;
-      }
-    },
+  
 
     cancelDestQr() {
       this.qrModeDest = false;
     },
-    cancelIssuerQr() {
-      this.qrModeIssuer = false;
-    },
 
-    bpsCheck() {
-      if (this.transFee.bps > 10000) {
-        this.transFee.bps = 10000;
-      } else if (this.transFee.bps < 0) {
-        this.transFee.bps = null;
-      }
-    },
-
-    percentCheck() {
-      if (this.transFee.percentage > 100) {
-        this.transFee.percentage = 100;
-      } else if (this.transFee.percentage < 0) {
-        this.transFee.percentage = null;
-      }
-    },
-
-    sendMaxCreate() {
-      this.sendMax.valid = true;
-      this.sendMax.currency = this.currencyAmount.currency;
-      this.sendMax.issuer = this.currencyAmount.issuer;
-      this.sendMax.value = this.currencyAmount.value;
-    },
 
     toHex(str) {
       var arr1 = [];
@@ -644,6 +505,8 @@ export default {
     }
   },
 
+   
+
   computed: {
     FeeXRP() {
       let feeXRP;
@@ -657,15 +520,40 @@ export default {
       }
     },
 
-    calcDeliver() {
-      let deliver;
-      if (this.transFee.input == "bps") {
-        deliver = this.currencyAmount.value / (this.transFee.bps / 10000 + 1);
-      } else if (this.transFee.input == "percent") {
-        deliver =
-          this.currencyAmount.value / (this.transFee.percentage / 100 + 1);
+    calcRippleTime() {
+      return this.rippleTime
+
+        
+    },
+
+    escrowsdate() {
+        if(this.FinishAfter){
+          this.rippleTime = Number(this.FinishAfter)-946684800
+    
+        this.HumanTime = new Date((this.FinishAfter) * 1000).toLocaleTimeString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+          hour12: true,
+          hour:"numeric",
+          minute:"numeric",
+        });}
+        else{this.HumanTime = null
+        this.rippleTime = null
+        }
+
+        return this.HumanTime
+      
+        //var date = new Date((accountObject.CancelAfter + 946684800) * 1000);
+    },
+
+    useOriginating() {
+      if(!this.destination.Account){
+        return false}
+      else if(this.walletAddress == this.destination.Account){
+        return true
       }
-      return deliver;
+      else{return false}
     },
 
     decodeTxBlob() {
@@ -676,6 +564,7 @@ export default {
 </script>
 
 <style scoped>
+
 input {
   text-align: center;
   background: black;
@@ -684,22 +573,27 @@ input {
   font-size: 22px;
 }
 input::-webkit-input-placeholder {
-  color: lightslategray !important;
+  color: lightskyblue !important;
 }
 
 input:-moz-placeholder {
   /* Firefox 18- */
-  color: lightslategray !important;
+  color: lightskyblue !important;
 }
 
 input::-moz-placeholder {
   /* Firefox 19+ */
-  color: lightslategray !important;
+  color: lightskyblue !important;
 }
 
 input:-ms-input-placeholder {
-  color: lightslategray !important;
+  color: lightskyblue !important;
 }
+
+flatpickr-input::-webkit-input-placeholder {
+  color: lightskyblue !important;
+}
+
 .no-border {
   border-top: 0;
   border-left: 0;
@@ -725,4 +619,6 @@ input:focus {
   color: #07e2ff;
   background: grey;
 }
+
+
 </style>

@@ -246,6 +246,12 @@
       <button type="button" class="btn btn-lg btn-outline-success btn-block" style="font-size:26px;" v-on:click="display('Payment')">
           <i class="fas fa-money-bill-alt"></i> Payment
         </button>
+        <button type="button" class="btn btn-lg btn-outline-success btn-block" style="font-size:26px;" v-on:click="display('CreateEscrow')">
+         <i class="fas fa-lock"></i> Create Escrow
+        </button>
+        <button type="button" class="btn btn-lg btn-outline-success btn-block" style="font-size:26px;" v-on:click="display('FinishEscrow')">
+         <i class="fas fa-unlock"></i> Finish Escrow
+        </button>
         <button type="button" class="btn btn-lg btn-outline-primary btn-block" style="font-size:26px;" v-on:click="display('TrustSet')">
           <i class="fas fa-handshake"></i> Set Trust
         </button>
@@ -256,11 +262,15 @@
          <i class="fas fa-key"></i> Set Regular Key
         </button>
         <button type="button" class="btn btn-lg btn-outline-warning btn-block" style="font-size:26px;" v-on:click="display('SetSignerList')">
-          Set Signer List
+          <i class="fas fa-list-ol"></i> Set Signer List
         </button>
         <button type="button" class="btn btn-lg btn-outline-warning btn-block" style="font-size:26px;" v-on:click="display('DepositPreauth')">
          <i class="fas fa-clipboard-check"></i> Authorize Deposit Accounts
-        </button>     
+        </button>
+        <button type="button" class="btn btn-lg btn-outline-danger btn-block" style="font-size:26px;" v-on:click="display('DisableMaster')">
+           <i class="fas fa-skull"></i> <i class="fas fa-star fa-xs"></i> Disable Master Key <i class="fas fa-star fa-xs"></i> <i class="fas fa-skull"></i> 
+        </button>
+             
 
          <!--
       <button type="button" class="btn btn-lg btn-outline-danger btn-block" style="font-size:26px;" v-on:click="display('DisableMaster')" disabled>
@@ -296,6 +306,16 @@
     <DepPreAuth :walletAddress="walletAddress" :secret="seed" :signerCount="signerCount" :multiSignSetup="multiSignSetup"> </DepPreAuth>
   </div>
 
+  <!--Finish Escrow -->
+  <div v-if="proceed && txType =='FinishEscrow'" class="container" style="height:100%;width:100%;">
+    <FinishEscrow :walletAddress="walletAddress" :secret="seed" :signerCount="signerCount" :multiSignSetup="multiSignSetup"> </FinishEscrow>
+  </div>
+
+  <!--Create Escrow -->
+  <div v-if="proceed && txType =='CreateEscrow'" class="container" style="height:100%;width:100%;">
+    <CreateEscrow :walletAddress="walletAddress" :secret="seed" :signerCount="signerCount" :multiSignSetup="multiSignSetup"> </CreateEscrow>
+  </div>
+
   <!--Set Signer List -->
   <div v-if="proceed && txType =='SetSignerList'" class="container" style="height:100%;width:100%;">
     <SetSignerList :walletAddress="walletAddress" :secret="seed" :signerCount="signerCount" :multiSignSetup="multiSignSetup"> </SetSignerList>
@@ -326,6 +346,8 @@ import AccountSet from './AccountSet';
 import DepPreAuth from './DepPreAuth';
 import SetSignerList from './SetSignerList';
 import AddSignature from './AddSignature';
+import CreateEscrow from './CreateEscrow';
+import FinishEscrow from './FinishEscrow';
 import { EventBus } from "./eventbus.js";
 
 export default {
@@ -339,6 +361,8 @@ export default {
     DepPreAuth,
     SetSignerList,
     AddSignature,
+    FinishEscrow,
+    CreateEscrow,
   },
 
   mounted() {

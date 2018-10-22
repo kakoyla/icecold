@@ -511,12 +511,14 @@ export default {
       })
     },
     issuerCheck() {
+      if(this.LimitAmount.issuer){
         this.LimitAmount.issuer = this.LimitAmount.issuer.trim();
       var string = this.LimitAmount.issuer
       if (string.match(/^r[a-k+m-z+A-H+J-N+P-Z0-9]{25,}/) && string.length >= 25 && string.length <= 35) {
         this.LimitIssuerValid = true
       }
-      else(this.LimitIssuerValid = false)
+      else {this.LimitIssuerValid = false}
+      }
     },
 
     onQrDecodeEmail: function (decodedString) {
@@ -542,31 +544,37 @@ export default {
     },
 
     checkDomain(){
+      if(this.domain.value){
       this.domain.value = this.domain.value.trim();
       this.domain.value = this.domain.value.replace(/^\/\/|^.*?:(\/\/)?/, ''); //removes http/s:
       this.domain.value = this.domain.value.replace(/^www\./,''); //removes www.
       this.domain.value = this.domain.value.toLowerCase();
       this.domain.value = this.domain.value.trim();
+      }
       
     },
 
     checkMessageKey(){
+      if(this.messageKey.value){
       this.messageKey.value = this.messageKey.value.trim().toUpperCase();
       var string = this.messageKey.value
       if (string.match(/^[0-9A-Fa-f]{66}$/)){
         this.messageKey.valid = true
       }
-      else(this.messageKey.valid = false)
+      else {this.messageKey.valid = false}
+      }
     },
 
     checkEmailHash(){
+      if(this.email.hash){
       this.email.hash = this.email.hash.trim().toUpperCase();
   
       var string = this.email.hash
       if (string.match(/^$|^[A-Fa-f0-9]{32}$/)){
         this.email.valid = true
       }
-      else(this.email.valid = false)
+      else {this.email.valid = false}
+      }
     },
 
     transferRateConvert(){

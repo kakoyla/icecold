@@ -266,12 +266,14 @@ export default {
       })
     },
     issuerCheck() {
+        if(this.LimitAmount.issuer){
         this.LimitAmount.issuer = this.LimitAmount.issuer.trim();
       var string = this.LimitAmount.issuer
       if (string.match(/^r[a-k+m-z+A-H+J-N+P-Z0-9]{25,}/) && string.length >= 25 && string.length <= 35) {
         this.LimitIssuerValid = true
       }
-      else(this.LimitIssuerValid = false)
+      else{this.LimitIssuerValid = false}
+        }
     },
 
     onQrDecodeIssuer: function (decodedString) {

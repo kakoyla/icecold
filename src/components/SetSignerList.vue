@@ -332,6 +332,7 @@ export default {
         });
     },
     acctCheck() {
+      if(this.acct){
       this.acct = this.acct.trim();
       var string = this.acct;
       if (
@@ -340,7 +341,8 @@ export default {
         string.length <= 35
       ) {
         this.acctValid = true;
-      } else this.acctValid = false;
+      } else {this.acctValid = false;}
+      }
     },
 
     quorumCheck() {

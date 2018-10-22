@@ -28,7 +28,7 @@
     </div>
       
     <div v-if="tx || decoded"> 
-      <div v-if="!signedTx">
+      <div v-if="!signedTx.blob">
       ADD SIGNATURE 
     <div v-if="txHolder" v-for="(value,key) in txHolder" style="word-wrap:break-word">
             <div class="row">
@@ -52,7 +52,7 @@
             </div>
         </div>
 
-    <div v-if="!txblob">       
+    <div v-if="!signedTx.blob">       
         <h5 style="margin:20px;color:lightskyblue">
             After verifying the information above is correct, you can sign the transaction. 
               
@@ -64,44 +64,37 @@
             <button type="button" class="btn btn-lg btn-outline-success" style="margin:20px;color:white;font-size:30px" @click="MultisignTx() " >Sign Transaction</button>
             </div>
       </div>
-      <div v-if="signedTx">
-        <div v-if="txblob">
+      <div v-if="signedTx.blob">
+        
     <h4 class="buttercup" style="margin:20px"> Here is the Signed Transaction. </h4>
      <h4 class="lightskyblue" style="margin:20px"> 
        If you are the last signer you can now submit the transaction. 
-       This must be submitted using "submit_multisign" as the signatures are not ordered. 
        </h4>
-       <h4 class="buttercup" style="margin:20px">
-         If there are additional signatures needed, you can pass this blob on to the next signer.
-         </h4>
+       
        
         
 
-        <div v-if="txblob" style="margin-top:15px; word-wrap: break-word;">
-      <label for="txJson"><span class="badge badge-success" style="margin-top:20px;font-size:25px">TX Blob:</span></label>
+        <div style="margin-top:15px; word-wrap: break-word;">
+      <label for="signedTx.txJson"><span class="badge badge-success" style="margin-top:20px;font-size:25px">TX Blob:</span></label>
       <div class="" style="font-size:16px">
-    {{NewBlob}}
+    {{signedTx.blob}}
     </div>
     </div>
+    
   <!--Modal-->
-                <div v-if="txblob" class="container" style="margin-top:10px;margin-bottom:40px;margin-left:auto;margin-right:auto">
-                  <Modalbtn v-bind:txblob="NewBlob"></Modalbtn>
+                <div class="container" style="margin-top:10px;margin-bottom:40px;margin-left:auto;margin-right:auto">
+                  <Modalbtn v-bind:txblob="signedTx.blob"></Modalbtn>
                 </div>
                 <!--end Modal-->
+
+    <h4 class="buttercup" style="margin:20px">
+         If there are additional signatures needed, you can pass this blob on to the next signer.
+         </h4>
     
-    </div>
+    
         <h4 class="text-primary">Signed Transaction</h4>
-        <div v-if="!txHolder" v-for="(value,key) in signedTx.txJSON" style="word-wrap:break-word">
-            <div class="row">
-                <div class="col-sm-3 lightskyblue" style="font-size:20px; text-align:right">
-                    {{key}}
-                </div>
-                <div class="col-sm-9" style="font-size:22px; text-align:left">
-                    {{value}}
-                </div>
-            </div>
-        </div>
-        <div v-if="txHolder" v-for="(value,key) in txHolder" style="word-wrap:break-word">
+       
+        <div v-if="signedTx.txJSON" v-for="(value,key) in signedTx.txJSON" style="word-wrap:break-word">
             <div class="row">
                 <div class="col-sm-3 lightskyblue" style="font-size:20px; text-align:right">
                     {{key}}
@@ -128,143 +121,114 @@
 
 <script>
 import RippledWsClientSign from "rippled-ws-client-sign";
-import VueQrcode from '@xkeshi/vue-qrcode';
+import VueQrcode from "@xkeshi/vue-qrcode";
 import Modalbtn from "./modalBtn";
-import { QrcodeReader } from 'vue-qrcode-reader';
-import binary from "ripple-binary-codec";
-import RippleKeypairs from 'ripple-keypairs';
-
+import { QrcodeReader } from "vue-qrcode-reader";
+const RippleCodec = require("ripple-binary-codec");
+const RippleKeypairs = require("ripple-keypairs");
+const RippleAPI = require("ripple-lib").RippleAPI;
+const api = new RippleAPI();
 
 export default {
   name: "AddSignature",
 
   components: {
-    VueQrcode,Modalbtn,QrcodeReader,
-    },
+    VueQrcode,
+    Modalbtn,
+    QrcodeReader
+  },
   props: ["signingAddress", "signingSecret", "tx"],
   data() {
     return {
-      
-      Transaction:null,
-      signedTx:null,
-      txblob:null,
-      importTx:null,
-      decoded:null,
-      origSigners:null,
-      txHolder:null,
-      NewBlob:null,
-      qrModeBlob:false,
-      
-
-
-
-      
+      Transaction: null,
+      signedTx: {
+        blob: null,
+        txJSON: null
+      },
+      importTx: null,
+      decoded: null,
+      txHolder: null,
+      qrModeBlob: false
     };
   },
   mounted() {},
 
   methods: {
-
     MultisignTx() {
-      
-      
-      
+      if (this.importTx) {
+        this.Transaction = this.txHolder;
+        let s = [];
+        s.push(this.importTx);
 
-      if(this.importTx){
-        this.Transaction = this.txHolder
-        this.origSigners = this.Transaction.Signers
-        
-        delete this.Transaction.Signers 
-      
-        this.Transaction = JSON.stringify(this.Transaction)
-        this.multiSigSecret = {signAs: this.signingAddress};
-      new RippledWsClientSign(this.Transaction, [this.signingSecret])
-        .then(SignedTransaction => {
-          this.signedTx = SignedTransaction;
-          this.signedTx.txJSON =binary.decode(this.signedTx.tx_blob) 
-          this.origSigners.push(this.signedTx.txJSON.Signers[0])
-          this.txHolder.Signers = this.origSigners
-          //this.txHolder = JSON.stringify(this.txHolder)
-          this.NewBlob = binary.encode(this.txHolder)
-          console.log("SignedTransaction", SignedTransaction);
-          this.txblob = true;
-        })
-        .catch(SignError => {
-          console.log("SignError", SignError.details);
-          alert("There was an error when signing, see console log");
-        });
-        
-      }
-      else{
-        this.Transaction = this.tx        
-        this.Transaction = JSON.stringify(this.Transaction)
-        
-      this.multiSigSecret = {signAs: this.signingAddress};
-      new RippledWsClientSign(this.Transaction, [this.signingSecret])
-        .then(SignedTransaction => {
-          this.signedTx = SignedTransaction;
-          this.signedTx.txJSON =binary.decode(this.signedTx.tx_blob) 
-          this.NewBlob = this.signedTx.tx_blob
-          console.log("SignedTransaction", SignedTransaction);
-          this.txblob = true;
-        })
-        .catch(SignError => {
-          console.log("SignError", SignError.details);
-          alert("There was an error when signing, see console log");
-        });
+        delete this.Transaction.Signers;
+
+        this.Transaction = JSON.stringify(this.Transaction);
+
+        s.push(
+          api.sign(
+            this.Transaction,
+            RippleKeypairs.deriveKeypair(this.signingSecret),
+            { signAs: this.signingAddress }
+          ).signedTransaction
+        );
+
+        let MultiSignedTransactionBinary = api.combine(s);
+        let MultiSignedTransaction = RippleCodec.decode(
+          MultiSignedTransactionBinary.signedTransaction
+        );
+        this.signedTx.blob = MultiSignedTransactionBinary.signedTransaction;
+        this.signedTx.txJSON = MultiSignedTransaction;
+
+        console.log(MultiSignedTransactionBinary);
+        console.log(MultiSignedTransaction);
+
+        console.log("-".repeat(40));
+      } else {
+        this.Transaction = JSON.stringify(this.tx);
+        this.signedTx.blob = api.sign(
+          this.Transaction,
+          RippleKeypairs.deriveKeypair(this.signingSecret),
+          { signAs: this.signingAddress }
+        ).signedTransaction;
+        this.signedTx.txJSON = RippleCodec.decode(this.signedTx.blob);
       }
     },
-    decodeBlob(){
-        if(this.importTx){
-        this.decoded =binary.decode(this.importTx)
-        this.checkSignersDups()
 
-        this.txHolder = this.decoded
-        }
-        else if(!this.importTx){
-            this.decoded = null
-        }
+    decodeBlob() {
+      if (this.importTx) {
+        this.decoded = RippleCodec.decode(this.importTx);
+        this.checkSignersDups();
+
+        this.txHolder = this.decoded;
+      } else if (!this.importTx) {
+        this.decoded = null;
+      }
     },
-    onQrDecodeBlob: function (decodedString) {
+    onQrDecodeBlob: function(decodedString) {
       this.importTx = decodedString;
       this.qrModeBlob = false;
       this.decodeBlob();
     },
-    cancelBlobQr(){
+    cancelBlobQr() {
       this.qrModeBlob = false;
     },
 
-    checkSignersDups(){
+    checkSignersDups() {
       this.decoded.Signers.forEach(element => {
-        if(element.Signer.Account ==this.signingAddress){
-          this.importTx = null,
-          this.decoded = null,
-        
-          alert("This account has already signed!")
+        if (element.Signer.Account == this.signingAddress) {
+          (this.importTx = null),
+            (this.decoded = null),
+            alert("This account has already signed!");
         }
-      }) 
-},
-
-    
-    
+      });
+    }
   },
   computed: {
-      FeeXRP(){
-          this.feeXRP = this.fee / 1000000;
-          return this.feeXRP
-      },
-/*
-      decodeTxBlob() {
-      return binary.decode(this.signedTx.tx_blob);
-    }, */
-
-    
-    
-    
-  
-      },
-    
-
+    FeeXRP() {
+      this.feeXRP = this.fee / 1000000;
+      return this.feeXRP;
+    }
+  }
 };
 </script>
 
@@ -273,7 +237,7 @@ input {
   text-align: center;
   background: black;
   /*background: #343a40; */
-  color: #FBCD4B;
+  color: #fbcd4b;
   font-size: 22px;
 }
 input::-webkit-input-placeholder {
@@ -301,18 +265,21 @@ input:-ms-input-placeholder {
 }
 
 input:focus {
-    background-color: black;
+  background-color: black;
   /*background-color: #343a40;*/
   color: lightskyblue;
 }
 
-    .dropdown-item { font-family: Lato, Arial, Tahoma, Verdana;
-                font-size: 1em;
-                line-height: 1.5em;
-                color: #07e2ff;
-                font-weight: 500;
-                text-shadow: none;
-              }
-    .drp-list:hover {color:#07e2ff;
-                  background: grey;}
+.dropdown-item {
+  font-family: Lato, Arial, Tahoma, Verdana;
+  font-size: 1em;
+  line-height: 1.5em;
+  color: #07e2ff;
+  font-weight: 500;
+  text-shadow: none;
+}
+.drp-list:hover {
+  color: #07e2ff;
+  background: grey;
+}
 </style>

@@ -262,12 +262,14 @@ export default {
       })
     },
     acctCheck() {
+        if(this.acct){
         this.acct = this.acct.trim();
       var string = this.acct
       if (string.match(/^r[a-k+m-z+A-H+J-N+P-Z0-9]{25,}/) && string.length >= 25 && string.length <= 35) {
         this.acctValid = true
       }
-      else(this.acctValid = false)
+      else{this.acctValid = false}
+        }
     },
 
     onQrDecodeAcct: function (decodedString) {
