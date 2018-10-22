@@ -431,6 +431,7 @@ export default {
     },
 
     getKeypair() {
+      if(this.seed){
       this.seed = this.seed.trim()
      
       try {
@@ -440,9 +441,11 @@ export default {
       catch(err){
         alert('Secret entered is invalid, please review your input. Secret should begin with a lowercase "s"')
       }
+      }
     },
 
     getSigningKeypair() {
+      if(this.signingSeed){
       this.signingSeed = this.signingSeed.trim()
      
       try {
@@ -452,9 +455,11 @@ export default {
       catch(err){
         alert('Secret entered is invalid, please review your input. Secret should begin with a lowercase "s"')
       }
+      }
     },
 
     getKeypairRegularKeySecret() {
+      if(this.regularKeySecret){
       this.regularKeySecret = this.regularKeySecret.trim()
      
       try {
@@ -464,6 +469,7 @@ export default {
       catch(err){
         this.regularKeyAddress =null;
         alert('Secret entered is invalid, please review your input. Secret should begin with a lowercase "s"')
+      }
       }
     },  
 
@@ -527,12 +533,14 @@ export default {
       this.qrModeRegKeySecret = false;
     },
     initAcctCheck() {
+      if(this.initiatingAcct){
         this.initiatingAcct = this.initiatingAcct.trim();
       var string = this.initiatingAcct
       if (string.match(/^r[a-k+m-z+A-H+J-N+P-Z0-9]{25,}/) && string.length >= 25 && string.length <= 35) {
         this.initAcctValid = true
       }
-      else(this.initAcctValid = false)
+      else {this.initAcctValid = false}
+      }
     },
 
   },
