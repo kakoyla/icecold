@@ -389,7 +389,7 @@ export default {
       this.Transaction = {
         TransactionType: "EscrowCreate",
         Account: this.walletAddress,
-        Amount: (this.amount * 1000000).toString(), // Amount in drops, so multiply (6 decimal positions)
+        Amount: (this.amount * 1000 * 1000).toFixed(0) + '', // Amount in drops, so multiply (6 decimal positions)
         FinishAfter: this.rippleTime,
         Fee: this.fee.toString(),
         Destination: this.destination.Account,

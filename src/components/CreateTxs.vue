@@ -479,7 +479,11 @@ export default {
         Sequence: this.Sequence * 1
       };
       if (this.cur2Send == "XRP") {
-        this.Transaction.Amount = (this.amountToSend * 1000000).toString(); // Amount in drops, so multiply (6 decimal positions)
+        this.Transaction.Amount = (this.amountToSend * 1000 * 1000).toFixed(0) + '' 
+        
+        
+        
+        // Amount in drops, so multiply (6 decimal positions)
       } else {
         this.Transaction.Amount = {
           currency: this.currencyAmount.currency,
