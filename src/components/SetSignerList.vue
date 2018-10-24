@@ -222,7 +222,7 @@
 import RippledWsClientSign from "rippled-ws-client-sign";
 import VueQrcode from "@xkeshi/vue-qrcode";
 import Modalbtn from "./modalBtn";
-import qrScanBtn from "./qrScanBtn"
+import qrScanBtn from "./qrScanBtn";
 import { QrcodeReader } from "vue-qrcode-reader";
 import { EventBus } from "./eventbus.js";
 
@@ -301,7 +301,7 @@ export default {
       this.Transaction = {
         TransactionType: "SignerListSet",
         Account: this.walletAddress,
-        Fee: this.fee,
+        Fee: this.fee.toString(),
         Sequence: this.Sequence * 1
       };
       if (this.deleteList) {
@@ -313,7 +313,7 @@ export default {
       }
       if (this.multiSignSetup) {
         this.Transaction.Fee =
-          Number(this.fee) * (Number(this.signerCount) + 1);
+          (Number(this.fee) * (Number(this.signerCount) + 1)).toString();
         this.Transaction.SigningPubKey = "";
       }
        

@@ -227,7 +227,7 @@ export default {
     this.Transaction = {
               TransactionType: 'DepositPreauth',
               Account: this.walletAddress,
-              Fee: this.fee,
+              Fee: this.fee.toString(),
               Sequence: this.Sequence *1,
             };
     if(this.AuthUnauth =="authorize"){

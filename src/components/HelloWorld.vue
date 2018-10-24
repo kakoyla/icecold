@@ -326,6 +326,11 @@
     <AddSignature :signingAddress="signingAddress" :signingSecret="signingSeed" :tx="tx"> </AddSignature>
   </div>
 
+  <!--Disable Master -->
+  <div v-if="proceed && txType =='DisableMaster'" class="container" style="height:100%;width:100%;">
+    <DisableMaster :walletAddress="walletAddress" :secret="seed" :signerCount="signerCount" :multiSignSetup="multiSignSetup"> </DisableMaster>
+  </div>
+
   <div class="" style="position: fixed; bottom: 20px; right: 20px;">  
     <button @click="resetKeypair()" class="btn btn-outline-primary" type="button"><i class="fas fa-trash-alt fa-2x" style="color:white;"></i></button>
       <div>Clear Wallet</div>
@@ -348,6 +353,7 @@ import SetSignerList from './SetSignerList';
 import AddSignature from './AddSignature';
 import CreateEscrow from './CreateEscrow';
 import FinishEscrow from './FinishEscrow';
+import DisableMaster from './DisableMaster';
 import { EventBus } from "./eventbus.js";
 
 export default {
@@ -363,6 +369,7 @@ export default {
     AddSignature,
     FinishEscrow,
     CreateEscrow,
+    DisableMaster
   },
 
   mounted() {

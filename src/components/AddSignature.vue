@@ -6,7 +6,7 @@
         <p style="text-align:center"><b><span class=""> Enter Tx_Blob for the transaction to be signed:</span></b></p>
     
         <div class="input-group mb-3">
-          <input type="text" pattern="^\S+$" class="form-control text-Dak" placeholder=" tx_blob "onfocus="this.select();" v-model="importTx" @blur="decodeBlob(),checkSignersDups()">
+          <input type="text" pattern="^\S+$" class="form-control text-Dak" placeholder=" tx_blob " onfocus="this.select();" v-model="importTx" @blur="decodeBlob(),checkSignersDups()">
         </div>
         
     </div>
@@ -214,6 +214,7 @@ export default {
     },
 
     checkSignersDups() {
+      if(this.decoded.Signers){
       this.decoded.Signers.forEach(element => {
         if (element.Signer.Account == this.signingAddress) {
           (this.importTx = null),
@@ -221,7 +222,7 @@ export default {
             alert("This account has already signed!");
         }
       });
-    }
+    }}
   },
   computed: {
     FeeXRP() {

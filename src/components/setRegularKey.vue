@@ -245,7 +245,7 @@ export default {
     this.Transaction = {
               TransactionType: 'SetRegularKey',
               Account: this.walletAddress,
-              Fee: this.fee,
+              Fee: this.fee.toString(),
               Sequence: this.Sequence *1,
             };
     try {
@@ -257,7 +257,7 @@ export default {
       }
       if (this.multiSignSetup) {
         this.Transaction.Fee =
-          Number(this.fee) * (Number(this.signerCount) + 1);
+          (Number(this.fee) * (Number(this.signerCount) + 1)).toString();
         this.Transaction.SigningPubKey = "";
       }
     
