@@ -14,7 +14,7 @@
             <span class="focus-border"></span>
         </div>
         <h5 v-if="!ownerValid" style="margin:20px;color:lightskyblue">
-            If you see this message, the Regular Key account is currently invalid. Please review and make sure the account begins with a lowercase letter
+            If you see this message, the Owner Account is currently invalid. Please review and make sure the account begins with a lowercase letter
             "r", does not contain: capital letters "O" or "I", the lowercase letter "l" or the number "0" and is between 25 and 35 characters in length. 
         </h5>
             <div  v-if="ownerValid" >

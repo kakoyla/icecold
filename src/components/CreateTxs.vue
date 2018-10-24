@@ -273,7 +273,7 @@
             Hint: The minimum fee currently allowed is 10 drops (0.000010 XRP). If the XRPL is busy, a transaction with a low fee might not be processed in a timely manner.  
         </h5>
         <h5 style="margin:20px;color:lightskyblue">
-            Fee currently set to: <span class="buttercup"> {{ feeXRP }} </span> XRP
+            Fee currently set to: <span class="buttercup"> {{ FeeXRP }} </span> XRP
         </h5>
         </div>
 
