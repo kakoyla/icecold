@@ -147,7 +147,7 @@
         </div>
         <div v-if="cur2Send !='XRP'">
         <div class="col-boom">
-        	<input v-model="currencyAmount.value" type="number" rDpsdD9vTwkf1GiNkxunLLDBXsEXG9GNmk class="effect-2 no-border" maxlength=16 placeholder="0.00">
+        	<input v-model="currencyAmount.value" type="number" class="effect-2 no-border" maxlength=16 placeholder="0.00" @blur="amountValueCheck()" >
             <span class="focus-border"></span>
         </div>
         <h5 v-if="!currencyAmount.value" style="margin:20px;color:lightskyblue">
@@ -575,6 +575,12 @@ export default {
       this.destination.Tag =null}
     },
 
+    amountValueCheck() {
+      if(this.currencyAmount.value){
+        this.currencyAmount.value = Number(this.currencyAmount.value).toPrecision(16)
+      }
+    },
+
 
     issuerCheck() {
       if(this.currencyAmount.issuer){
@@ -669,6 +675,7 @@ export default {
         deliver =
           this.currencyAmount.value / (this.transFee.percentage / 100 + 1);
       }
+      deliver = Number(deliver).toPrecision(16)
       return deliver;
     },
 
