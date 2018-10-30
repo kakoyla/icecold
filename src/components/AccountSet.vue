@@ -303,11 +303,10 @@
     {{signedTx.tx_blob}}
     </div>
     </div>
-  <!--Modal-->
-                <div v-if="txblob" class="container" style="margin-top:10px;margin-bottom:40px;margin-left:auto;margin-right:auto">
-                  <Modalbtn v-bind:txblob="signedTx.tx_blob"></Modalbtn>
+  <!-- QR TX_BLOB -->
+    <div v-if="signedTx.tx_blob" style="margin-top:20px; margin-bottom:40px; margin-left:auto;margin-right:auto;height:400px; width:400px">
+                    <qrcode :value ="signedTx.tx_blob" :options="{ size: 400 }"></qrcode>
                 </div>
-                <!--end Modal-->
 
     </div> 
     <!-- end Signed Tx -->
@@ -519,6 +518,7 @@ export default {
       }
       else {this.LimitIssuerValid = false}
       }
+      else {this.LimitIssuerValid = false}
     },
 
     onQrDecodeEmail: function (decodedString) {
@@ -563,6 +563,7 @@ export default {
       }
       else {this.messageKey.valid = false}
       }
+      else {this.messageKey.valid = false}
     },
 
     checkEmailHash(){

@@ -2,6 +2,10 @@
   <div class="container-fluid">
     <div v-if="!tx && !decoded">
       <div class= "container text-primary bg-black rounded"  style="padding:5px">
+        <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="$parent.resetKeypair()" >Back</button> 
+    </div>
+    <img src="../../static/img/xrp-symbol-white.svg" width="100" height="100" style="margin-bottom:10px">
     <div class= "text-Dak text-light bg-black rounded " style="padding:10px">
         <p style="text-align:center"><b><span class=""> Enter Tx_Blob for the transaction to be signed:</span></b></p>
     
@@ -28,6 +32,10 @@
     </div>
       
     <div v-if="tx || decoded"> 
+      <div v-if="!tx" style="text-align:left; margin-bottom:20px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="decoded = null" >Back</button> 
+    </div>
+
       <div v-if="!signedTx.blob">
       ADD SIGNATURE 
     <div v-if="txHolder" v-for="(value,key) in txHolder" style="word-wrap:break-word">
@@ -66,53 +74,43 @@
       </div>
       <div v-if="signedTx.blob">
         
-    <h4 class="buttercup" style="margin:20px"> Here is the Signed Transaction. </h4>
-     <h4 class="lightskyblue" style="margin:20px"> 
-       If you are the last signer you can now submit the transaction. 
-       </h4>
+    <h4 class="lightskyblue"> Here is the signed transaction.
+      If additional signatures are needed, you can pass this blob on to the next signer. 
+      If you are the last signer, transfer this blob to an online computer and submit the transaction.  </h4>
+
+
        
        
         
 
-        <div style="margin-top:15px; word-wrap: break-word;">
-      <label for="signedTx.txJson"><span class="badge badge-success" style="margin-top:20px;font-size:25px">TX Blob:</span></label>
+        <div style=" word-wrap: break-word;">
+      <label for="signedTx.txJson"><span class="badge badge-success" style="margin-top:5px;font-size:20px">TX Blob:</span></label>
       <div class="" style="font-size:16px">
     {{signedTx.blob}}
     </div>
     </div>
     
-  <!--Modal-->
-                <div class="container" style="margin-top:10px;margin-bottom:40px;margin-left:auto;margin-right:auto">
-                  <Modalbtn v-bind:txblob="signedTx.blob"></Modalbtn>
+  <!-- QR TX_BLOB -->
+    <div class="row">
+      <div style="width:50%;float:left;padding:10px">
+    <div v-if="signedTx.blob" style="margin-top:20px; margin-bottom:40px; margin-left:auto;margin-right:auto;height:400px; width:400px">
+                    <qrcode :value ="signedTx.blob" :options="{ size: 400 }"></qrcode>
                 </div>
-                <!--end Modal-->
-
-    <h4 class="buttercup" style="margin:20px">
-         If there are additional signatures needed, you can pass this blob on to the next signer.
-         </h4>
+      </div>
     
     
-        <h4 class="text-primary">Signed Transaction</h4>
+      <div style="width:50%;float:left;padding:10px">
+        <h4 class="text-white">Signed By:</h4>
        
-        <div v-if="signedTx.txJSON" v-for="(value,key) in signedTx.txJSON" style="word-wrap:break-word">
-            <div class="row">
-                <div class="col-sm-3 lightskyblue" style="font-size:20px; text-align:right">
-                    {{key}}
-                </div>
-                <div class="col-sm-9" style="font-size:22px; text-align:left">
+        <div v-if="signedTx.txJSON" v-for="(value,key) in signedTx.txJSON" style="word-wrap:break-word;text-align:left  ">
                 <div v-if="key === 'Signers'" >
                   <div v-for="(value,key) in value" style="margin:10px">
-                    ({{ key+1 }}) <span class="badge badge-light" style="font-size:20px">{{value.Signer.Account}}</span>
+                    ({{ key+1 }}) <span class="badge badge-primary" style="font-size:20px">{{value.Signer.Account}}</span>
                   </div>
-                  
-                  
-                  
                 </div>
-                <div v-else>{{value}}</div>
-            </div>
         </div>
-        </div>
-
+      </div>
+    </div>
     
     </div>
     </div>

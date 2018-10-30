@@ -7,7 +7,7 @@
         </div>
     <h4>Do you want to Authorize or Unauthorize an Account for Deposits? </h4>
     <h5 style="margin:20px;color:lightskyblue">
-        You need to make sure the accounts Deposit Authorization  
+        Hint: You need to make sure the accounts Deposit Authorization Flag is turned on, otherwise adding authorized accounts won't mean anything.
         </h5>
 
     <div>
@@ -30,7 +30,7 @@
         </div>
         
         <h5 v-if="!acctValid" style="margin:20px;color:lightskyblue">
-            If you see this message, the issuer account is currently invalid. Please review and make sure the account begins with a lowercase letter
+            If you see this message, the Authorized Account is currently invalid. Please review and make sure the account begins with a lowercase letter
             "r", does not contain: capital letters "O" or "I", the lowercase letter "l" or the number "0" and is between 25 and 35 characters in length. 
         </h5>
         <div v-if="!acctValid && !qrModeAcct" style="margin-top:50px; margin-bottom:50px;">  
@@ -159,11 +159,10 @@
     {{signedTx.tx_blob}}
     </div>
     </div>
-  <!--Modal-->
-                <div v-if="txblob" class="container" style="margin-top:10px;margin-bottom:40px;margin-left:auto;margin-right:auto">
-                  <Modalbtn v-bind:txblob="signedTx.tx_blob"></Modalbtn>
+  <!-- QR TX_BLOB -->
+    <div v-if="signedTx.tx_blob" style="margin-top:20px; margin-bottom:40px; margin-left:auto;margin-right:auto;height:400px; width:400px">
+                    <qrcode :value ="signedTx.tx_blob" :options="{ size: 400 }"></qrcode>
                 </div>
-                <!--end Modal-->
 
     </div> 
     <!-- end Signed Tx -->
@@ -182,6 +181,7 @@ import VueQrcode from '@xkeshi/vue-qrcode';
 import Modalbtn from "./modalBtn";
 import { QrcodeReader } from 'vue-qrcode-reader';
 import { EventBus } from "./eventbus.js";
+import { stringify } from 'querystring';
 
 
 export default {
@@ -249,6 +249,9 @@ export default {
     
     
     },
+
+
+    
     signTx(){
       new RippledWsClientSign(this.Transaction, this.secret).then((SignedTransaction) => {
         this.signedTx = SignedTransaction
@@ -261,6 +264,7 @@ export default {
           alert('There was an error when signing, see console log')
       })
     },
+    
     acctCheck() {
         if(this.acct){
         this.acct = this.acct.trim();
@@ -270,6 +274,7 @@ export default {
       }
       else{this.acctValid = false}
         }
+        else{this.acctValid = false}
     },
 
     onQrDecodeAcct: function (decodedString) {

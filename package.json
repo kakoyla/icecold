@@ -12,9 +12,10 @@
   },
   "dependencies": {
     "@xkeshi/vue-qrcode": "^1.0.0",
+    "ripple-binary-codec": "^0.2.0",
     "ripple-keypairs": "^0.10.1",
     "ripple-lib": "^1.0.2",
-    "rippled-ws-client-sign": "^0.1.4",
+    "rippled-ws-client-sign": "^0.2.0",
     "vue": "^2.5.17",
     "vue-flatpickr-component": "^8.0.0",
     "vue-js-popover": "^1.1.7",

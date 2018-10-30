@@ -2,10 +2,11 @@
   <div class="bg-black text-light container-fluid">
     <!--Get Initiating info -->
     <div v-if="!proceed">
-       <img src="../../static/img/xrp-symbol-white.svg" width="100" height="100" style="margin-bottom:10px">
+       
      
       <!--Ask Standard Key Pair or Regular Key -->
       <div class="container" v-if="UseRegularKey ==null"> 
+      <img src="../../static/img/xrp-symbol-white.svg" width="100" height="100" style="margin-bottom:10px">
       <h4>Choose your signing method:</h4>
         <button type="button" class="btn btn-lg btn-outline-success btn-block" style="font-size:26px;" v-on:click="RegKeyTag('NO')">
           Standard Key Pair
@@ -36,12 +37,16 @@
       <!--END Ask Standard Key Pair or Regular Key -->
 
     <!--Enter Regular Key Pair -->
-    <div v-if=" UseRegularKey == 'YES' "> 
+    <div class="container" v-if=" UseRegularKey == 'YES' ">
     <div v-if="!qrModeRegKeyAcct && !qrModeRegKeySecret">
     <div class="container" style="height:100%;width:100%;">
      
      <!--Enter Initiating Account -->
-    <div v-if="!initiatingSet">     
+    <div v-if="!initiatingSet">
+    <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="resetKeypair()" >Back</button> 
+    </div>
+    <img src="../../static/img/xrp-symbol-white.svg" width="100" height="100" style="margin-bottom:10px">      
     <h4>Enter Initiating Account:</h4>
     <div class="col-boom">
         	<input class="effect-2 no-border" type="text" placeholder="r............................."  v-model="initiatingAcct" @blur="initAcctCheck()">
@@ -70,9 +75,13 @@
 
      <!--Enter Regular Key Secret -->
     <div v-if="initiatingSet">
+      <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="initiatingSet = false" >Back</button> 
+      </div>
+      <img src="../../static/img/xrp-symbol-white.svg" width="100" height="100" style="margin-bottom:10px">
       <h4>Enter Regular Key (signing account) Secret:</h4>
       <div class="col-boom">
-        <input class="effect-2 no-border" type="text" placeholder="s............................."  v-model="regularKeySecret" @blur="getKeypairRegularKeySecret()">
+        <input class="effect-2 no-border" :type="secretType" placeholder="s............................."  v-model="regularKeySecret" @blur="getKeypairRegularKeySecret()">
         <span class="focus-border"></span>
       </div>
   
@@ -83,11 +92,11 @@
         </button>
       <div style="font-size:20px;">Scan QR Code</div>
     </div>
-    <div v-if="regularKeyAddress" class="container" style="margin-top:10%">
-      <div class="buttercup" style="font-size:20px;">Initiating Account: </div>
-      <div class="lightskyblue" style="font-size:26px;"> {{walletAddress}} </div> 
-      <div class="buttercup" style="font-size:20px;">Regular Key (signing) Account: </div>
-      <div class="lightskyblue" style="font-size:26px;"> {{regularKeyAddress}} </div>
+    <div v-if="regularKeyAddress" class="container" style="margin-top:5%">
+      <div class="buttercup" style="font-size:40px;"><u>Initiating Account:</u> </div>
+      <div class="lightskyblue" style="font-size:40px;"> {{walletAddress}} </div> 
+      <div class="buttercup" style="font-size:40px;"><u>Key (signing) Account:</u> </div>
+      <div class="lightskyblue" style="font-size:40px;"> {{regularKeyAddress}} </div>
 
       <div class="container" style="margin-top:50px; margin-bottom:50px;">  
         <button @click="seed=regularKeySecret, proceed=true" class="btn btn-outline-primary btn-lg" style="color:white" type="button">NEXT</button>
@@ -124,6 +133,10 @@
     <div v-if=" UseRegularKey == 'NO' ">
     <div v-if="!qrModeSeed">
     <div class="container" style="height:100%;width:100%;">
+      <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="resetKeypair()" >Back</button> 
+    </div>
+    <img src="../../static/img/xrp-symbol-white.svg" width="100" height="100" style="margin-bottom:10px">
      
          
     
@@ -160,6 +173,11 @@
     <div v-if="!qrModeRegKeyAcct" class="container" style="height:100%;width:100%;">
      
      <!--Enter Initiating Account -->
+     <div style="text-align:left; margin-bottom:40px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="resetKeypair()" >Back</button> 
+    </div>
+    <img src="../../static/img/xrp-symbol-white.svg" width="100" height="100" style="margin-bottom:10px">
+
     
     <h4>Enter the Multi-Sig Account which will be initiating the Transaction</h4>
     <div class="col-boom">
@@ -208,6 +226,10 @@
     <div v-if=" UseRegularKey == 'ADDSIG' ">
     <div v-if="!qrModeSigningSeed">
     <div class="container" style="height:100%;width:100%;">
+    <div v-if="!tx" style="text-align:left; margin-bottom:40px"> <!--back button -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="resetKeypair()" >Back</button> 
+    </div>
+    <img src="../../static/img/xrp-symbol-white.svg" width="100" height="100" style="margin-bottom:10px">
      
          
     <h4> Enter the Secret for the Account you want to sign the Multi-Sig transaction with </h4>
@@ -242,6 +264,20 @@
     </div> <!--end get initiating info -->
     <!-- Chose Tx Type -->
   <div v-if="proceed && !txType" class='container'> 
+      <div v-if="initiatingSet" style="text-align:left; margin-bottom:20px"> <!--back button to regkey selection -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="proceed = false" >Back</button> 
+      </div>
+      <div v-if="!initiatingSet && !signerCount" style="text-align:left; margin-bottom:20px"> <!--back button to standard key selection -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="proceed = false" >Back</button> 
+      </div>
+      <div v-if="signerCount" style="text-align:left; margin-bottom:20px"> <!--back button to standard key selection -->
+            <button type="button" class="btn btn-outline-primary btn-lg" style="margin-top:5px;color:white" @click="proceed = false" >Back</button> 
+      </div>
+
+
+
+
+
       <h4> Which type of transaction would you like to create? </h4>
       <button type="button" class="btn btn-lg btn-outline-success btn-block" style="font-size:26px;" v-on:click="display('Payment')">
           <i class="fas fa-money-bill-alt"></i> Payment
@@ -335,9 +371,7 @@
     <button @click="resetKeypair()" class="btn btn-outline-primary" type="button"><i class="fas fa-trash-alt fa-2x" style="color:white;"></i></button>
       <div>Clear Wallet</div>
     </div>
-  <!--div class="walletAcct">  
-    <h5> Initiating Account: <span class="buttercup"> {{ walletAddress }} </span> </h5>
-    </div -->
+  
   </div>
 </template>
 
@@ -404,6 +438,7 @@ export default {
       multiSignSetup:false,
       signerCount:null,
       tx:null,
+      secretType:null,
 
       
 
@@ -472,11 +507,16 @@ export default {
       try {
       this.keypair = keypairs.deriveKeypair(this.regularKeySecret);
       this.regularKeyAddress = keypairs.deriveAddress(this.keypair.publicKey)
+      this.secretType = "password";
         }
       catch(err){
         this.regularKeyAddress =null;
+        this.secretType="text";
         alert('Secret entered is invalid, please review your input. Secret should begin with a lowercase "s"')
       }
+      }
+      else{this.regularKeyAddress=null;
+      this.secretType="text";
       }
     },  
 
@@ -548,6 +588,7 @@ export default {
       }
       else {this.initAcctValid = false}
       }
+      else {this.initAcctValid = false}
     },
 
   },
