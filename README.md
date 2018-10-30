@@ -1,6 +1,8 @@
 # icecold
 
-> cold wallet interface
+> cold wallet interface, intended to be run only on a pc with no internet connection
+
+demo: https://kakoyla.github.io/
 
 ## Build Setup
 
@@ -8,14 +10,15 @@
 # install dependencies
 npm install
 
-# serve with hot reload at localhost:8080
-npm run dev
-
 # build for production with minification
 npm run build
 
-# build for production and view the bundle analyzer report
-npm run build --report
-```
+# Built files will be found in the dist folder
+To run without a server:
 
-For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
+1. OPEN the dist/index.html in a text editor
+2. FIND ALL "href=/" REPLACE WITH "href="
+3. FIND ALL "src=/" REPLACE WITH "src="
+4. SAVE 
+
+After saving you can open index.html and it will load offline with no server running.
