@@ -141,7 +141,7 @@
          
     
     <div class="col-boom">
-        	<input class="effect-2 no-border" type="text" placeholder="Enter Secret"  v-model="seed" @blur="getKeypair()">
+        	<input class="effect-2 no-border" :type="secretType" placeholder="Enter Secret"  v-model="seed" @blur="getKeypair()">
             <span class="focus-border"></span>
             </div>
         </div>
@@ -234,7 +234,7 @@
          
     <h4> Enter the Secret for the Account you want to sign the Multi-Sig transaction with </h4>
     <div class="col-boom">
-        	<input class="effect-2 no-border" type="text" placeholder="Enter Secret"  v-model="signingSeed" @blur="getSigningKeypair()">
+        	<input class="effect-2 no-border" :type="secretType" placeholder="Enter Secret"  v-model="signingSeed" @blur="getSigningKeypair()">
             <span class="focus-border"></span>
             </div>
         </div>
@@ -478,11 +478,19 @@ export default {
      
       try {
       this.keypair = keypairs.deriveKeypair(this.seed);
-      this.walletAddress = keypairs.deriveAddress(this.keypair.publicKey)
+      this.walletAddress = keypairs.deriveAddress(this.keypair.publicKey);
+      this.secretType ="password"
+
         }
       catch(err){
+        this.walletAddress = null;
+        this.secretType = "text";
         alert('Secret entered is invalid, please review your input. Secret should begin with a lowercase "s"')
       }
+      }
+      else{
+        this.signingAddress =null;
+        this.secretType ="text";
       }
     },
 
@@ -492,12 +500,19 @@ export default {
      
       try {
       this.signingKeypair = keypairs.deriveKeypair(this.signingSeed);
-      this.signingAddress = keypairs.deriveAddress(this.signingKeypair.publicKey)
+      this.signingAddress = keypairs.deriveAddress(this.signingKeypair.publicKey);
+      this.secretType = "password";
         }
       catch(err){
+        this.signingAddress=null;
+        this.secretType ="text";
         alert('Secret entered is invalid, please review your input. Secret should begin with a lowercase "s"')
       }
       }
+      else{
+        this.signingAddress=null;
+        this.secretType="text";
+        }
     },
 
     getKeypairRegularKeySecret() {
@@ -544,6 +559,7 @@ export default {
       this.qrModeSigningSeed=null
       this.signingKeypair=null
       this.tx=null
+      this.secretType =null
       
     },
     onQrDecode: function (decodedString) {
