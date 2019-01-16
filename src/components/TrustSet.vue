@@ -233,6 +233,7 @@ export default {
         TransactionType: "TrustSet",
         Account: this.walletAddress,
         Fee: this.fee.toString(),
+        Flags: 131072,
         Sequence: this.Sequence * 1,
         LimitAmount: this.LimitAmount
       };
